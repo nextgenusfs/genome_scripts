@@ -1,4 +1,5 @@
 #!/usr/bin/env perl -w
+#This script is based off of Kenosis answer at http://stackoverflow.com/questions/15585488/i-wan-to-replace-a-sequence-name-in-fasta-file-with-another-name 
 =usage 
 
 reformat_fasta_headers.pl -f fasta_file -a annotation file (2 columns tab delimited: find col 1 and replace with col2)
