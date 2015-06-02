@@ -6,8 +6,6 @@
 #                                               #
 #################################################
 
-#source bashrc
-source ~/.bashrc
 
 simplifyFasta ()
 {
