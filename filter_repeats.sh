@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #This script filters repetetive elements generated from RepeatModeler, TransposonPSI, and RepARK
+#Run like: filter_repeats.sh genome_name
 
 #############set up TransposonPSI run for Pseudogymnoascus species#############################
 ##start
