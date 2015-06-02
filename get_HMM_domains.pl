@@ -15,9 +15,9 @@ my $hmm_db="/Users/jon/projects/DB/HMM"; #need to set this to your local folder 
 GetOptions(
 	'p|proteins:s'=>\$proteins, #protein fasta file
 	'm|hmm:s'=>\$hmm, #name of HMM model to search
-    'e|evalue:s'=>\$evalue, #directory you are working in
-    'l|length:s'=>\$length, #min length required to keep domain
-    'c|cpus:s'=>\$cpus, #cpus to use for hmmer search, default is one
+    	'e|evalue:s'=>\$evalue, #directory you are working in
+    	'l|length:s'=>\$length, #min length required to keep domain
+    	'c|cpus:s'=>\$cpus, #cpus to use for hmmer search, default is one
 	'h|help:s'=>\$helpAsked,
 	'v|version'=>sub{print $version."\n"; exit;},
 );
