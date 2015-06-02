@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 #script to rename from 2 column file that has old name tab new name
+#the new name cannot contain any of these characters or will mess up newick format ( , : ; ) 
 
 use strict;
 use warnings;
