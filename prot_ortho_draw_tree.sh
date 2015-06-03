@@ -1,5 +1,13 @@
 #!/bin/bash
 #script for taking proteinorthov5.11 results, pulling orthologs, randomizing to desired number, concatenating all sequences together, and then drawing phylogentic tree
+#dependencies: GNU coreutils, MAFFT, Trimal, Seqmagick, FastTree, Raxml, fasta_tool (all need to be in $PATH)
+
+
+#using GNU unix tools on Mac, thus gsed = sed gawk = awk gsort = sort, etc
+
+
+#define location of protortho tools
+protortho_dir=/usr/local/proteinortho_v5.11/tools
 
 simulated_readarray ()
 {
@@ -48,7 +56,7 @@ else
 	grep $"^$num\t$num\t1" $1 >> subsample.poff
 
 	#then run following in directory to pull fasta files
-	perl /usr/local/proteinortho_v5.11/tools/grab_proteins.pl subsample.poff
+	perl $protortho_dir/grab_proteins.pl subsample.poff
 
 	#move .fasta files into folder
 	mv *.fasta fasta_storage/
