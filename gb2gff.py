@@ -13,7 +13,7 @@ parser=argparse.ArgumentParser(
     description='''Script that converts genbank to GFF3 format ''',
     epilog="""Written by Jon Palmer (2015)  palmer.jona@gmail.com""")
 parser.add_argument('gbk', help='Genbank file')
-parser.add_argument('--gff', default="gb2gff.gff3", help='GFF3 output')
+parser.add_argument('-g','--gff', default="gb2gff.gff3", help='GFF3 output')
 args=parser.parse_args()
 
 if len(sys.argv) < 2:
