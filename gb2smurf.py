@@ -11,9 +11,9 @@ parser=argparse.ArgumentParser(
     description='''Script that generates SMURF input from Genbank Flat File ''',
     epilog="""Written by Jon Palmer (2015)  palmer.jona@gmail.com""")
 parser.add_argument('gbk', help='Genbank file (Required)')
-parser.add_argument('--prot', default="smurf.proteins.fasta", help='Fasta output')
-parser.add_argument('--dna', default="smurf.scaffolds.fasta", help='Fasta output')
-parser.add_argument('--smurf', default="smurf.annotations.txt", help='Smurf output')
+parser.add_argument('-p','--prot', default="smurf.proteins.fasta", help='Fasta output')
+parser.add_argument('-g','--dna', default="smurf.scaffolds.fasta", help='Fasta output')
+parser.add_argument('s','--smurf', default="smurf.annotations.txt", help='Smurf output')
 args=parser.parse_args()
 
 if len(sys.argv) < 2:
