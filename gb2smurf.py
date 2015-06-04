@@ -10,7 +10,7 @@ import argparse
 parser=argparse.ArgumentParser(
     description='''Script that generates SMURF input from Genbank Flat File ''',
     epilog="""Written by Jon Palmer (2015)  palmer.jona@gmail.com""")
-parser.add_argument('--gb', help='Genbank file')
+parser.add_argument('gbk', help='Genbank file (Required)')
 parser.add_argument('--prot', default="smurf.proteins.fasta", help='Fasta output')
 parser.add_argument('--dna', default="smurf.scaffolds.fasta", help='Fasta output')
 parser.add_argument('--smurf', default="smurf.annotations.txt", help='Smurf output')
@@ -20,7 +20,7 @@ if len(sys.argv) < 2:
     parser.print_usage()
     sys.exit(1)
 
-gbk_file = args.gb
+gbk_file = args.gbk
 smurf_file = args.smurf
 fasta_file = args.prot
 contig_file = args.dna
