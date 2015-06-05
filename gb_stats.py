@@ -8,8 +8,19 @@
 import sys
 import numpy
 from Bio import SeqIO
+import argparse
 
-gbk_filename = sys.argv[1]
+parser=argparse.ArgumentParser(
+    description='''Script that takes Genbank file input and computes statistics ''',
+    epilog="""Jon Palmer (2015)  palmer.jona@gmail.com""")
+parser.add_argument('gbk', help='Genbank file (Required)')
+args=parser.parse_args()
+
+if len(sys.argv) < 2:
+    parser.print_usage()
+    sys.exit(1)
+
+gbk_filename = args.gbk
 
 gene_length = 0
 avg_gene_length = 0
@@ -35,7 +46,7 @@ for record in SeqIO.parse(gbk_filename, "genbank"):
     C_count += record.seq.count("C")
     G_count += record.seq.count("G")
     GC_total = C_count + G_count
-    GC_count = GC_total / float(total) * 100  
+    GC_count = GC_total / float(total) * 100
     for f in record.features:
         if f.type == "source":
             organism = f.qualifiers.get("organism", ["???"])[0]
@@ -47,10 +58,10 @@ for record in SeqIO.parse(gbk_filename, "genbank"):
         if f.type == "tRNA":
             trna_count = trna_count + 1
         if f.type == "gene":
-	        gene_length = gene_length + len(f) 
-	        
-avg_gene_length = gene_length / gene_count 
-         
+	        gene_length = gene_length + len(f)
+
+avg_gene_length = gene_length / gene_count
+
 seqlength = sorted(seqlength)
 unique = []
 for entry in seqlength:
@@ -74,7 +85,7 @@ if index % 2==0:
     n50 = n50
 else:
     n50 = n50[index -1]
-   
+
 print "-----------------------------------------"
 print("%s %s" % (organism, isolate))
 print "-----------------------------------------"
