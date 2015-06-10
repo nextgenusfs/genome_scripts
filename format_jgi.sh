@@ -98,6 +98,8 @@ else
     
     And you can submit $3.gbk to AntiSmash (http://antismash.secondarymetabolites.org)
     
+    You likely want to delete the folder $dir/$3, unless you need the intermediate files.
+    
     "
      echo "------------------------"
 fi
