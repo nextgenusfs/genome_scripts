@@ -92,13 +92,10 @@ else
 	cat prot_tmp/*.$num_proteins > $3.fasta
 
 	#run mafft on this file to generate an alignment
-	mafft $3.fasta > $3.align.fasta
+	mafft --thread $4 $3.fasta > $3.align.fasta
 
 	#Run TrimAl to remove gaps from alignment
-	trimal -in $3.align.fasta -out $3.trimal.fasta -automated1
-
-	#Convert to PHYLIP
-	seqmagick convert --input-format fasta --output-format phylip $3.trimal.fasta $3.trimal.phylip
+	trimal -in $3.align.fasta -out $3.trimal.phylip -automated1 -phylip
 
 	#Run fasttree
 	fasttree < $3.trimal.phylip > $3.trimal.fasttree.nwk
