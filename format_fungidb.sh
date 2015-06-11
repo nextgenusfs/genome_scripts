@@ -23,6 +23,8 @@ else
     echo "------------------------"
     #get current directory for writing results to
     dir=$PWD
+    #get directory of script to find genbank template
+    script_dir=$(command -v format_fungidb.sh | gsed 's,/format_fungidb.sh,,g')
     #make folder
     mkdir -p $3
     #get name of fasta headers to grep gff file with as they have fasta sequence file at bottom
@@ -35,6 +37,7 @@ else
         #first need to reformat GFF - alter some problematic regions
         gsed 's/^.*_SC/SC/g' $1 | grep -v $'\tsupercontig\t' | grep "^SC.*\tFungi" | gsed 's/;/;\t/g' | gawk -F"\t" 'BEGIN {OFS=FS="\t"} {print $1,$2,$3,$4,$5,$6,$7,$8,$9$13;}' | gsed 's/web_id.*$//g' > $3/genome.gff
     else
+        echo "Fasta header looks like this:  ($header)"
         gsed 's/ |.*//g' $2 > $3/genome.fasta
         short_head=${header:0:3}
         #first need to reformat GFF - alter some problematic regions
@@ -54,7 +57,7 @@ else
     echo "------------------------"
     echo "Running tbl2asn."
     echo "------------------------"
-    tbl2asn -p . -t $HOME/test.sbt -M n -Z discrep -a r10u -l paired-ends -j "[organism=$3]" -V b -c fx
+    tbl2asn -p . -t $script_dir/test.sbt -M n -Z discrep -a r10u -l paired-ends -j "[organism=$3]" -V b -c fx
     cp genome.gbf $dir/$3.gbk
     cd $dir
     echo "------------------------"
