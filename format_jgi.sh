@@ -19,6 +19,9 @@ else
     command -v gawk >/dev/null 2>&1 || { echo "I require gawk but it's not installed.  Aborting." >&2; exit 1; }
     command -v gb2smurf.py >/dev/null 2>&1 || { echo "I require gb2smurf.py but it's not installed.  Aborting." >&2; exit 1; }
     
+    #get directory of script to find genbank template
+    script_dir=$(command -v format_jgi.sh | gsed 's,/format_jgi.sh,,g')
+    
     #if CPUS not set, set it to max on system minus 1
     max_cores=$(sysctl -n hw.ncpu)
     num_cores=$(( max_cores - 1))
@@ -60,7 +63,7 @@ else
     echo "------------------------"
     echo "Running tbl2asn."
     echo "------------------------"
-    tbl2asn -p . -t $HOME/test.sbt -M n -Z discrep -a r10u -l paired-ends -j "[organism=$3]" -V b -c fx
+    tbl2asn -p . -t $script_dir/test.sbt -M n -Z discrep -a r10u -l paired-ends -j "[organism=$3]" -V b -c fx
     echo "------------------------"
     echo "Conversion to GBK was completed successfully, your file $3.gbk was created."
     gb2proteins.py genome.gbf $3.proteins.fasta
@@ -80,7 +83,7 @@ else
     echo "------------------------"
     echo "Running tbl2asn."
     echo "------------------------"
-    tbl2asn -p . -t $HOME/test.sbt -M n -Z discrep -a r10u -l paired-ends -j "[organism=$3]" -V b -c fx
+    tbl2asn -p . -t $script_dir/test.sbt -M n -Z discrep -a r10u -l paired-ends -j "[organism=$3]" -V b -c fx
     cp genome.gbf $dir/$3.gbk
     cd $dir
     gb2smurf.py $3.gbk -p $3.proteins.fasta -g $3.scaffolds.fasta -s $3.smurf.txt --jgi 
