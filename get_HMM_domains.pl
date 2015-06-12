@@ -11,7 +11,6 @@ my ($proteins, $hmm, $length) = @ARGV;
 my $version="get_HMM_domains.pl\tv0.1.1";
 my $osname = $^O;
 my $helpAsked;
-my $hmm_db="/Users/jon/projects/DB/HMM"; #need to set this to your local folder containing HMM models
 my $cpus = 1;
 my $evalue = 1e-10;
 my $outfile = "default_HMM_output.fasta";
@@ -55,8 +54,8 @@ else {
 }
 #Sub routine for running hmmscan and creating a bed file
 sub runHMMer{
-print "Running hmmerscan:\n   hmmscan --domtblout hmmscan.temp.out --cpu $cpus -E $evalue $hmm_db/$hmm $proteins\n";
-my $hmm_results = `hmmscan --domtblout hmmscan.temp.out --cpu $cpus -E $evalue $hmm_db/$hmm $proteins`;
+print "Running hmmerscan:\n   hmmscan --domtblout hmmscan.temp.out --cpu $cpus -E $evalue $hmm $proteins\n";
+my $hmm_results = `hmmscan --domtblout hmmscan.temp.out --cpu $cpus -E $evalue $hmm $proteins`;
 }
 sub formatHMM{
 my $output = 'hmmscan_domains.bed';
@@ -92,7 +91,7 @@ sub prtHelp {
     print "--evalue flag:  Evalue cutoff to use \n";
     print "--cpu flag:  Number of threads to use\n";
     print "-------------------------------------------------------------\n";
-    print "example:  get_HMM_domains.pl --proteins proteins.fasta --hmm KS.hmm --length 300 --out domains_out.fasta 1\n";
+    print "example:  get_HMM_domains.pl --proteins proteins.fasta --hmm KS.hmm --length 300 --out domains_out.fasta \n";
 }
 #print usage subroutine
 sub prtUsage {
