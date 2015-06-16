@@ -28,8 +28,9 @@ else
     #make folder
     mkdir -p $3
     #get name of fasta headers from human input, get first 5 headers and print out.
+    header_count=$(grep -c "^>")
     header=$(grep "^>" $2 | gsed 's/ |.*//g' | head -n5 | gsed 's/>//g')
-    echo "Fasta headers look like this:
+    echo "There are $header_count fasta files:  first 5 headers look like this:
 
 $header"
     echo "
