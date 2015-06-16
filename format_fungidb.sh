@@ -30,19 +30,14 @@ else
     #get name of fasta headers from human input, get first 5 headers and print out.
     header_count=$(grep -c "^>" $2)
     header=$(grep "^>" $2 | gsed 's/ |.*//g' | head -n5 | gsed 's/>//g')
-    echo "There are $header_count fasta files: I split header on first space, now first 5 headers look like this:
-
-$header"
-    echo "
-Enter the leading part of header to remove (usually copy everything from begining to underscore):"
+    printf "There are $header_count fasta files: I split header on first space, now first 5 headers look like this:\n$header"
+    printf "Enter the leading part of header to remove (usually copy start thru underscore): "
     read header_trim
     #now reformat fasta headers and save
     gsed 's/ |.*//g' $2 | gsed "s/>$header_trim/>/g" > $3/genome.fasta
-    #print back new geaders
+    #print back new headers
     new_header=$(grep "^>" $3/genome.fasta | head -n5 | gsed 's/>//g')
-    echo "New fasta headers look like this:
-
-$new_header"
+    printf "New fasta headers look like this:\n$new_header"
     #now reformat GFF file and save
     grep "^$header_trim" $1 | gsed "s/^$header_trim//g" | grep -v $'\tsupercontig\t' | gsed 's/;/;\t/g' | gawk -F"\t" 'BEGIN {OFS=FS="\t"} {print $1,$2,$3,$4,$5,$6,$7,$8,$9$13;}' | gsed 's/web_id.*$//g' > $3/genome.gff
     #now get descriptions for annotation file
