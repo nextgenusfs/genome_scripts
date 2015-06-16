@@ -30,10 +30,7 @@ else
     #get name of fasta headers from human input, get first 5 headers and print out.
     header_count=$(grep -c "^>" $2)
     header=$(grep "^>" $2 | head -n5 | gsed 's/>//g')
-    echo "There are $header_count fasta files: first 5 headers look like this:
-
-$header
-"
+    printf "\nThere are $header_count fasta files: first 5 headers look like this:\n\n$header\n\n"
     printf "Do you need to edit headers? (you need to simplify complicated headers) [y/n]: "
     read header_question
     if [ $header_question == "n" ]; then
@@ -55,7 +52,10 @@ $new_header"
     #now get annotations from KOG file, first get example gene name from gff
     name=$(grep $'\tgene\t' $4/genome.gff | head -n1 | gsed 's/;/\t/g' | gsed 's/Name=//g' | cut -f10)
     name_stem=${name/_*/}
-    grep -v "#transcriptId" $3 | gawk -F"\t" -v n="$name_stem" '{ print n"_"$2"\t""product""\t"$4;}' > $4/annotations.txt
+    #now need to make a 2 column "association" file
+    grep $'\tmRNA\t' $1 | cut -f9 | gsed 's/ID=//g' | gsed 's/;/\t/g' | gsed 's/proteinId=//g' | gawk -F"\t" -v n="$name_stem" '{ print n"_"$4"\t"$1;}' > $4/annotations.map
+    grep -v "#transcriptId" $3 | gawk -F"\t" -v n="$name_stem" '{ print n"_"$2"\t""product""\t"$4;}' > $4/annotations.tmp
+    gawk -F"\t" 'NR==FNR{a[$1]=$2;next}$1 in a{print a[$1]"\t"$2"\t"$3;}' $4/annotations.map $4/annotations.tmp > $4/annotations.txt
     #try running command line gag
     cd $dir/$4
     echo "------------------------"
@@ -74,7 +74,6 @@ $new_header"
     cp genome.gbf $dir/$4.gbk
     cd $dir
     gb2smurf.py $4.gbk -p $4.proteins.fasta -g $4.scaffolds.fasta -s $4.smurf.txt --jgi
-    echo "------------------------"
     echo "
     SMURF output is complete, script finished!
 
