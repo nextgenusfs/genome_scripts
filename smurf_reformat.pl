@@ -14,7 +14,7 @@
  -g|--genome
  -p|--proteins
  -v|--version
-	
+
 
 =head1 Author
 
@@ -56,7 +56,7 @@ print "\n";
 	print "-h (--help): Print this message\n";
 	print "-------------------------------------------------------------\n";
 	print "example:  smurf_reformat.pl -i Secondary-Metabolite-Clusters.txt -g genome.fasta -p proteins.fasta > output.txt\n\n"
-	
+
 }
 
 if(!defined($infi)) {
@@ -86,6 +86,7 @@ while (<$fh>) {
     next if  /^Cluster/;
     next if /^Backbone/;
     next if /^\n/;
+    next if /^\r$/;
     my @row = split(/\t/,$_);
     if (not exists $names{$row[0]}) {
         $names{$row[0]} = "Cluster_" . ++$count;
@@ -95,7 +96,7 @@ while (<$fh>) {
     my $db2 = Bio::DB::Fasta->new('smurf.proteins.tmp');
     my $protseq = $db2->seq($row[1]);
     print "$names{$row[0]}\t$row[1]\t$row[3]\t$row[5]\t$row[6]\t$row[9]\t$protseq\t$subseq\n";
-    
+
     }
 
 close $fh;
