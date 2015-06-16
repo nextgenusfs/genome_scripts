@@ -27,28 +27,25 @@ else
     script_dir=$(command -v format_fungidb.sh | gsed 's,/format_fungidb.sh,,g')
     #make folder
     mkdir -p $3
-    #get name of fasta headers to grep gff file with as they have fasta sequence file at bottom
-    header=$(gsed 's/ |.*//g' $2 | head -n1 | gsed 's/>//g')
-    if [[ $header == *"_SC"* ]]; then
-        echo "Fasta header contains _SC:  ($header)"
-        echo "Running extra steps to format correctly"
-        gsed 's/ |.*//g' $2 | gsed 's/>.*_SC/>SC/g' > $3/genome.fasta
-        short_head=${header:0:2}
-        #first need to reformat GFF - alter some problematic regions
-        gsed 's/^.*_SC/SC/g' $1 | grep -v $'\tsupercontig\t' | grep "^SC.*\tFungi" | gsed 's/;/;\t/g' | gawk -F"\t" 'BEGIN {OFS=FS="\t"} {print $1,$2,$3,$4,$5,$6,$7,$8,$9$13;}' | gsed 's/web_id.*$//g' > $3/genome.gff
-    else
-        echo "Fasta header looks like this:  ($header)"
-        gsed 's/ |.*//g' $2 > $3/genome.fasta
-        short_head=${header:0:3}
-        #first need to reformat GFF - alter some problematic regions
-        grep "^$short_head" $1 | grep -v $'\tsupercontig\t' | gsed 's/;/;\t/g' | gawk -F"\t" 'BEGIN {OFS=FS="\t"} {print $1,$2,$3,$4,$5,$6,$7,$8,$9$13;}' | gsed 's/web_id.*$//g' > $3/genome.gff
-    fi    
+    #get name of fasta headers from human input, get first 5 headers and print out.
+    header=$(grep "^>" $2 | gsed 's/ |.*//g' | head -n5 | gsed 's/>//g')
+    echo "Fasta headers look like this:
+
+$header"
+    echo "
+Enter the part of header to remove:"
+    read header_trim
+    #now reformat fasta headers and save
+    gsed "s/^$header_trim//g" $2 > $3/genome.fasta
+    #now reformat GFF file and save
+    grep "^$header_trim" $1 | grep -v $'\tsupercontig\t' | gsed 's/;/;\t/g' | gawk -F"\t" 'BEGIN {OFS=FS="\t"} {print $1,$2,$3,$4,$5,$6,$7,$8,$9$13;}' | gsed 's/web_id.*$//g' > $3/genome.gff
     #now get descriptions for annotation file
-    grep "^$short_head" $1 | grep -v $'\tsupercontig\t' | gsed 's/;/;\t/g' | grep $'\tgene\t' | gawk -F"\t" '{ print $9"\t""product""\t"$11;}' | gsed 's/;//g' | gsed 's/ID=/rna_/g' | gsed 's/\tproduct/-1\tproduct/g' | gsed 's/description=//g' | gsed 's/+/ /g'  > $3/annotation.tmp
+    grep "^$header_trim" $1 | grep -v $'\tsupercontig\t' | gsed 's/;/;\t/g' | grep $'\tgene\t' | gawk -F"\t" '{ print $9"\t""product""\t"$11;}' | gsed 's/;//g' | gsed 's/ID=/rna_/g' | gsed 's/\tproduct/-1\tproduct/g' | gsed 's/description=//g' | gsed 's/+/ /g'  > $3/annotation.tmp
     #remove strange formatting and remove empty lines as gag chokes on that
     python -c 'import sys, urllib; print urllib.unquote(sys.stdin.read())' < $3/annotation.tmp | gsed '/^$/d' > $3/annotations.txt
     #try running command line gag
     cd $dir/$3
+    echo "------------------------"
     echo "Running GAG."
     echo "------------------------"
     gag.py fasta=genome.fasta gff=genome.gff anno=annotations.txt
@@ -66,19 +63,19 @@ else
     gb2smurf.py $3.gbk -p $3.proteins.fasta -g $3.scaffolds.fasta -s $3.smurf.txt
     echo "
     SMURF output is complete, script finished!
-    
+
     Results:
         $3.gbk
         $3.proteins.fasta
         $3.scaffolds.fasta
         $3.smurf.txt
-        
+
     Now you can submit $3.proteins.fasta and $3.smurf.txt to http://jcvi.org/smurf/upload.php
-    
+
     And you can submit $3.gbk to AntiSmash (http://antismash.secondarymetabolites.org)
-    
+
     You likely want to delete the folder $dir/$3, unless you need the intermediate files for something else.
-    
+
     "
      echo "------------------------"
 fi
