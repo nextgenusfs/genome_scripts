@@ -9,44 +9,43 @@ from Bio import Entrez
 from xml.dom import minidom
 from Bio import SeqIO
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
 
 
 parser=argparse.ArgumentParser(
-    description='''Script searches NCBI Entrez and downloads annotated genomes ''',
+    description='''Script searches NCBI BioProject/Assembly Database and automatically downloads genomes in GBK format''',
     epilog="""Written by Jon Palmer (2015)  palmer.jona@gmail.com""")
 parser.add_argument('search_term', help='Organism search term')
 parser.add_argument('email', help='must tell ncbi who you are')
 parser.add_argument('-n', '--num_records', default='1000', help='max number of records to download')
+parser.add_argument('--only_annotated', action='store_true', help='only get annotated genomes')
 args=parser.parse_args()
 
 max_num = args.num_records
-
 #construct search term based on input
 organism = args.search_term
-term = '(((%s[Organism]) AND "genome sequencing"[Filter]) AND "bioproject protein"[Filter]) AND "bioproject assembly"[Filter]' % (organism)
-
+if args.only_annotated:
+    term = '(((%s[Organism]) AND "genome sequencing"[Filter]) AND "bioproject protein"[Filter]) AND "bioproject assembly"[Filter]' % (organism)
+else:
+    term = '((%s[Organism]) AND "genome sequencing"[Filter]) AND "bioproject assembly"[Filter]' % (organism)
 Entrez.email = args.email   # Always tell NCBI who you are
 handle = Entrez.esearch(db="bioproject", term=term, retmax=max_num)
 search_result = Entrez.read(handle)
 handle.close()
 count = int(search_result["Count"])
 print "------------------------------------------------"
-print("Found %i records from BioProject." % (count))
-question = raw_input('Do you want to continue?: [y/n] ')
+print("Found %i species from NCBI BioProject Database." % (count))
+print "------------------------------------------------\n"
+question = raw_input(bcolors.WARNING + "Do you want to continue?: [y/n] " + bcolors.ENDC)
 if question == "n":
     print "Script Exited by User"
     os._exit(1)
 else:
-    print "------------------------------------------------"
-    print "Using ELink to get assembly ID numbers."
+    print "\n------------------------------------------------"
+    print "Using ELink to cross-reference BioProject IDs with Assembly IDs."
     print "------------------------------------------------"
     gi_list = ",".join(search_result["IdList"])
     #get the link data from assembly and print list to temp file
@@ -66,7 +65,7 @@ else:
     out_handle.write(summary_handle.read())
     summary_handle.close()
     out_handle.close()
-    print "Feteched Esummary for all genomes, saved to temp file results.xml"
+    print "Fetched Esummary for all genomes, saved to temp file" + bcolors.WARNING + " results.xml" + bcolors.ENDC
     print "------------------------------------------------"
     #now need to parse those records to get Assembly accession numbers and download genome
     data = minidom.parse("results.xml")
@@ -88,13 +87,13 @@ else:
                 localfile = open(address, "wb")
                 shutil.copyfileobj(ftpfile, localfile)
                 localfile.close()
-                print("Found: " + species + ".  Downloaded file:  " + address)
+                print bcolors.OKGREEN + "Found: " + bcolors.ENDC + species + ". " + bcolors.OKGREEN + "Downloaded file: " + bcolors.ENDC + address
             except:
-                print "Error: file not found for " + species + " " + address + " it is likely an old assembly"
+                print bcolors.FAIL + "Error: " + bcolors.ENDC + "file not found for " + species + " " + address + " it is likely an old assembly"
     #now you've downloaded all of the files, now go through them and write to file if validated
     files = glob.glob("*.gbff.gz")
     for f in files:
-        print("Loading %s" % (f))
+        print bcolors.WARNING + "Loading: " + bcolors.ENDC + f
         out = re.sub("_genomic.gbff.gz", '', f)
         out_name = out + ".gbk"
         gbf_file = gzip.open(f, 'rb')
@@ -105,26 +104,25 @@ else:
             else:
                 check = "pass"
         if check == "pass":
-            print bcolors.OKGREEN + "GBK file validated, now writing to file" + bcolors.ENDC
+            print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.WARNING + out_name + bcolors.ENDC
             gbf_file = gzip.open(f, 'rb')
             gb_out = open(out_name, "w")
             gb_file = SeqIO.parse(gbf_file, "genbank")
             out_file = SeqIO.write(gb_file, gb_out, "genbank")
             gbf_file.close()
             gb_out.close()
+            os.remove(f)
         else:
-            print bcolors.WARNING + "GBK file missing seqeunce, skipping record" + bcolors.ENDC
+            print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
+            os.remove(f)
     
     #clean up your mess
     os.remove('results.xml')
     os.remove('gi_list.tmp')
-    filelist = glob.glob("*.gbff.gz")
-    for f in filelist:
-        os.remove(f)
     
     total = len([name for name in os.listdir('.') if os.path.isfile(name)])
     total -= 1
     print "------------------------------------------------"
-    print ("Searched for %s:" % (term))
+    print ("Searched for: %s" % (organism))
     print "------------------------------------------------"
     print ("Resulted in downloading and unpacking %i files\n" % (total))
