@@ -3,16 +3,21 @@
 #This script downloads all NCBI Fungal genomes with protein annotation
 #written by Jon Palmer palmer.jona at gmail dot com
 
-import sys
-import os
-import argparse
+import sys, Bio, os, argparse, os.path, gzip, glob, re
 import urllib2, shutil
-import os.path
 from Bio import Entrez
 from xml.dom import minidom
-import gzip
 from Bio import SeqIO
-import glob
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 parser=argparse.ArgumentParser(
     description='''Script searches NCBI Entrez and downloads annotated genomes ''',
@@ -76,31 +81,40 @@ else:
         out_name = folder + ".gbk"
         if os.path.isfile(out_name):
             print "Genome for " + species + " already downloaded and converted.  Skipping"
-            break
+            continue
         else:
-            if os.path.isfile(address):
-                print "Genome for " + species + " already downloaded, now converting."
-                gbf_file = gzip.open(address, 'rb')
-                gb_out = open(out_name, "w")
-                gb_file = SeqIO.parse(gbf_file, "genbank")
-                out_file = SeqIO.write(gb_file, gb_out, "genbank")
-                gbf_file.close()
-                gb_out.close()
+            try:
+                ftpfile = urllib2.urlopen("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/" + folder + "/" + address)
+                localfile = open(address, "wb")
+                shutil.copyfileobj(ftpfile, localfile)
+                localfile.close()
+                print("Found: " + species + ".  Downloaded file:  " + address)
+            except:
+                print "Error: file not found for " + species + " " + address + " it is likely an old assembly"
+    #now you've downloaded all of the files, now go through them and write to file if validated
+    files = glob.glob("*.gbff.gz")
+    for f in files:
+        print("Loading %s" % (f))
+        out = re.sub("_genomic.gbff.gz", '', f)
+        out_name = out + ".gbk"
+        gbf_file = gzip.open(f, 'rb')
+        for seq_record in SeqIO.parse(gbf_file, "genbank"):
+            sequence = seq_record.seq
+            if isinstance(sequence, Bio.Seq.UnknownSeq):
+                check = "fail"
             else:
-                print("Found: " + species + ".  Downloading file:  " + address)
-                try:
-                    ftpfile = urllib2.urlopen("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/" + folder + "/" + address)
-                    localfile = open(address, "wb")
-                    shutil.copyfileobj(ftpfile, localfile)
-                    localfile.close()
-                    gbf_file = gzip.open(address, 'rb')
-                    gb_out = open(out_name, "w")
-                    gb_file = SeqIO.parse(gbf_file, "genbank")
-                    out_file = SeqIO.write(gb_file, gb_out, "genbank")
-                    gbf_file.close()
-                    gb_out.close()
-                except:
-                    print "Error: file not found for " + species + " " + address
+                check = "pass"
+        if check == "pass":
+            print bcolors.OKGREEN + "GBK file validated, now writing to file" + bcolors.ENDC
+            gbf_file = gzip.open(f, 'rb')
+            gb_out = open(out_name, "w")
+            gb_file = SeqIO.parse(gbf_file, "genbank")
+            out_file = SeqIO.write(gb_file, gb_out, "genbank")
+            gbf_file.close()
+            gb_out.close()
+        else:
+            print bcolors.WARNING + "GBK file missing seqeunce, skipping record" + bcolors.ENDC
+    
     #clean up your mess
     os.remove('results.xml')
     os.remove('gi_list.tmp')
@@ -109,7 +123,8 @@ else:
         os.remove(f)
     
     total = len([name for name in os.listdir('.') if os.path.isfile(name)])
+    total -= 1
     print "------------------------------------------------"
     print ("Searched for %s:" % (term))
     print "------------------------------------------------"
-    print ("Resulted in downloading and unpacking %i files" % (total))
+    print ("Resulted in downloading and unpacking %i files\n" % (total))
