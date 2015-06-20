@@ -47,6 +47,9 @@ else:
     print "\n------------------------------------------------"
     print "Using ELink to cross-reference BioProject IDs with Assembly IDs."
     print "------------------------------------------------"
+    #look for gi_list and remove if it exists
+    if os.path.isfile('gi_list.tmp'):
+        os.remove('gi_list.tmp')
     gi_list = ",".join(search_result["IdList"])
     #get the link data from assembly and print list to temp file
     link_result = Entrez.read(Entrez.elink(dbfrom="bioproject", db="assembly", id=gi_list))
@@ -60,6 +63,9 @@ else:
         link_list = fi.read().splitlines()
     fi.close()
     gi_link = ",".join(link_list)
+    #look for results.xml and remove if it exists
+    if os.path.isfile('results.xml'):
+        os.remove('results.xml')
     summary_handle = Entrez.esummary(db="assembly", id=gi_link, report="xml")
     out_handle = open('results.xml', "w")
     out_handle.write(summary_handle.read())
@@ -75,45 +81,21 @@ else:
         accession = id.getElementsByTagName("AssemblyAccession")[0].childNodes[0].data
         name = id.getElementsByTagName("AssemblyName")[0].childNodes[0].data
         species = id.getElementsByTagName("Organism")[0].childNodes[0].data
+        gb_id = id.getElementsByTagName("GbUid")[0].childNodes[0].data
         folder = accession + "_" + name.replace(" ", "_")
         address = folder + "_genomic.gbff.gz"
-        if os.path.isfile(address):
-            print "Genome for " + species + " already downloaded, converting to GBK"
-            print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
-            out = re.sub(" ", "_", species)
-            out = re.sub("\.", "", out)
-            out_name = out + ".gbk"
-            gbf_file = gzip.open(address, 'rb')
-            for seq_record in SeqIO.parse(gbf_file, "genbank"):
-                sequence = seq_record.seq
-                if isinstance(sequence, Bio.Seq.UnknownSeq):
-                    check = "fail"
-                else:
-                    check = "pass"
-            if check == "pass":
-                print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.BLUE + out_name + bcolors.ENDC
-                gbf_file = gzip.open(address, 'rb')
-                gb_out = open(out_name, "w")
-                gb_file = SeqIO.parse(gbf_file, "genbank")
-                out_file = SeqIO.write(gb_file, gb_out, "genbank")
-                gbf_file.close()
-                gb_out.close()
-                os.remove(address)
-            else:
-                print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
-                os.remove(address)
+        out = re.sub(" ", "_", species)
+        out = re.sub("\.", "", out)
+        out = re.sub("\/", "-", out)
+        out = re.sub("\#", "-", out)
+        out_name = out + "_gi" + gb_id + ".gbk"
+        if os.path.isfile(out_name):
+            print "Genome for " + species + " already converting to GBK"
             continue
         else:
-            try:
-                ftpfile = urllib2.urlopen("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/" + folder + "/" + address)
-                localfile = open(address, "wb")
-                shutil.copyfileobj(ftpfile, localfile)
-                localfile.close()
-                print bcolors.OKGREEN + "Found: " + bcolors.ENDC + species + ". " + bcolors.OKGREEN + "Downloaded file: " + bcolors.ENDC + address
+            if os.path.isfile(address):
+                print "Genome for " + species + " already downloaded, converting to GBK"
                 print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
-                out = re.sub(" ", "_", species)
-                out = re.sub("\.", "", out)
-                out_name = out + ".gbk"
                 gbf_file = gzip.open(address, 'rb')
                 for seq_record in SeqIO.parse(gbf_file, "genbank"):
                     sequence = seq_record.seq
@@ -133,8 +115,36 @@ else:
                 else:
                     print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
                     os.remove(address)
-            except:
-                print bcolors.FAIL + "Error: " + bcolors.ENDC + "file not found for " + species + " " + address + " it is likely an old assembly"
+                    continue
+            else:
+                try:
+                    ftpfile = urllib2.urlopen("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/" + folder + "/" + address)
+                    localfile = open(address, "wb")
+                    shutil.copyfileobj(ftpfile, localfile)
+                    localfile.close()
+                    print bcolors.OKGREEN + "Found: " + bcolors.ENDC + species + ". " + bcolors.OKGREEN + "Downloaded file: " + bcolors.ENDC + address
+                    print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
+                    gbf_file = gzip.open(address, 'rb')
+                    for seq_record in SeqIO.parse(gbf_file, "genbank"):
+                        sequence = seq_record.seq
+                        if isinstance(sequence, Bio.Seq.UnknownSeq):
+                            check = "fail"
+                        else:
+                            check = "pass"
+                    if check == "pass":
+                        print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.BLUE + out_name + bcolors.ENDC
+                        gbf_file = gzip.open(address, 'rb')
+                        gb_out = open(out_name, "w")
+                        gb_file = SeqIO.parse(gbf_file, "genbank")
+                        out_file = SeqIO.write(gb_file, gb_out, "genbank")
+                        gbf_file.close()
+                        gb_out.close()
+                        os.remove(address)
+                    else:
+                        print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
+                        os.remove(address)
+                except:
+                    print bcolors.FAIL + "Error: " + bcolors.ENDC + "file not found for " + species + " " + address + " it is likely an old assembly"
 
     #clean up your mess
     os.remove('results.xml')
