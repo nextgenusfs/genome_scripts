@@ -10,10 +10,10 @@ from xml.dom import minidom
 from Bio import SeqIO
 class bcolors:
     OKGREEN = '\033[92m'
+    BLUE = '\033[36m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-
 
 parser=argparse.ArgumentParser(
     description='''Script searches NCBI BioProject/Assembly Database and automatically downloads genomes in GBK format''',
@@ -39,7 +39,7 @@ count = int(search_result["Count"])
 print "------------------------------------------------"
 print("Found %i species from NCBI BioProject Database." % (count))
 print "------------------------------------------------\n"
-question = raw_input(bcolors.WARNING + "Do you want to continue?: [y/n] " + bcolors.ENDC)
+question = raw_input(bcolors.BLUE + "Do you want to continue?: [y/n] " + bcolors.ENDC)
 if question == "n":
     print "Script Exited by User"
     os._exit(1)
@@ -55,7 +55,7 @@ else:
         fo.write("%s\n" % (link["Id"]))
     fo.close()
 
-    #load in temp file to variable and get esummary for each record?
+    #load in temp file to variable and get esummary for each record
     with open('gi_list.tmp') as fi:
         link_list = fi.read().splitlines()
     fi.close()
@@ -65,7 +65,7 @@ else:
     out_handle.write(summary_handle.read())
     summary_handle.close()
     out_handle.close()
-    print "Fetched Esummary for all genomes, saved to temp file" + bcolors.WARNING + " results.xml" + bcolors.ENDC
+    print "Fetched Esummary for all genomes, saved to temp file"
     print "------------------------------------------------"
     #now need to parse those records to get Assembly accession numbers and download genome
     data = minidom.parse("results.xml")
@@ -77,9 +77,31 @@ else:
         species = id.getElementsByTagName("Organism")[0].childNodes[0].data
         folder = accession + "_" + name.replace(" ", "_")
         address = folder + "_genomic.gbff.gz"
-        out_name = folder + ".gbk"
-        if os.path.isfile(out_name):
-            print "Genome for " + species + " already downloaded and converted.  Skipping"
+        if os.path.isfile(address):
+            print "Genome for " + species + " already downloaded, converting to GBK"
+            print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
+            out = re.sub(" ", "_", species)
+            out = re.sub("\.", "", out)
+            out_name = out + ".gbk"
+            gbf_file = gzip.open(address, 'rb')
+            for seq_record in SeqIO.parse(gbf_file, "genbank"):
+                sequence = seq_record.seq
+                if isinstance(sequence, Bio.Seq.UnknownSeq):
+                    check = "fail"
+                else:
+                    check = "pass"
+            if check == "pass":
+                print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.BLUE + out_name + bcolors.ENDC
+                gbf_file = gzip.open(address, 'rb')
+                gb_out = open(out_name, "w")
+                gb_file = SeqIO.parse(gbf_file, "genbank")
+                out_file = SeqIO.write(gb_file, gb_out, "genbank")
+                gbf_file.close()
+                gb_out.close()
+                os.remove(address)
+            else:
+                print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
+                os.remove(address)
             continue
         else:
             try:
@@ -88,34 +110,32 @@ else:
                 shutil.copyfileobj(ftpfile, localfile)
                 localfile.close()
                 print bcolors.OKGREEN + "Found: " + bcolors.ENDC + species + ". " + bcolors.OKGREEN + "Downloaded file: " + bcolors.ENDC + address
+                print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
+                out = re.sub(" ", "_", species)
+                out = re.sub("\.", "", out)
+                out_name = out + ".gbk"
+                gbf_file = gzip.open(address, 'rb')
+                for seq_record in SeqIO.parse(gbf_file, "genbank"):
+                    sequence = seq_record.seq
+                    if isinstance(sequence, Bio.Seq.UnknownSeq):
+                        check = "fail"
+                    else:
+                        check = "pass"
+                if check == "pass":
+                    print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.BLUE + out_name + bcolors.ENDC
+                    gbf_file = gzip.open(address, 'rb')
+                    gb_out = open(out_name, "w")
+                    gb_file = SeqIO.parse(gbf_file, "genbank")
+                    out_file = SeqIO.write(gb_file, gb_out, "genbank")
+                    gbf_file.close()
+                    gb_out.close()
+                    os.remove(address)
+                else:
+                    print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
+                    os.remove(address)
             except:
                 print bcolors.FAIL + "Error: " + bcolors.ENDC + "file not found for " + species + " " + address + " it is likely an old assembly"
-    #now you've downloaded all of the files, now go through them and write to file if validated
-    files = glob.glob("*.gbff.gz")
-    for f in files:
-        print bcolors.WARNING + "Loading: " + bcolors.ENDC + f
-        out = re.sub("_genomic.gbff.gz", '', f)
-        out_name = out + ".gbk"
-        gbf_file = gzip.open(f, 'rb')
-        for seq_record in SeqIO.parse(gbf_file, "genbank"):
-            sequence = seq_record.seq
-            if isinstance(sequence, Bio.Seq.UnknownSeq):
-                check = "fail"
-            else:
-                check = "pass"
-        if check == "pass":
-            print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.WARNING + out_name + bcolors.ENDC
-            gbf_file = gzip.open(f, 'rb')
-            gb_out = open(out_name, "w")
-            gb_file = SeqIO.parse(gbf_file, "genbank")
-            out_file = SeqIO.write(gb_file, gb_out, "genbank")
-            gbf_file.close()
-            gb_out.close()
-            os.remove(f)
-        else:
-            print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
-            os.remove(f)
-    
+
     #clean up your mess
     os.remove('results.xml')
     os.remove('gi_list.tmp')
