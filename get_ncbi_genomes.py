@@ -90,7 +90,7 @@ else:
         out = re.sub("\#", "-", out)
         out_name = out + "_gi" + gb_id + ".gbk"
         if os.path.isfile(out_name):
-            print "Genome for " + species + " already converting to GBK"
+            print "Genome for " + species + " already converted to GBK"
             continue
         else:
             if os.path.isfile(address):
