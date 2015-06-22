@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#This script downloads all NCBI Fungal genomes with protein annotation
+#This script takes folder of GBK files, reads taxonomy, and moves them into folders based on phylum
 #written by Jon Palmer palmer.jona at gmail dot com
 
 import sys, argparse, Bio, glob, os
