@@ -88,6 +88,7 @@ else:
         out = re.sub("\.", "", out)
         out = re.sub("\/", "-", out)
         out = re.sub("\#", "-", out)
+        out = re.sub("\'", "", out)
         out_name = out + "_gi" + gb_id + ".gbk"
         if os.path.isfile(out_name):
             print "Genome for " + species + " already converted to GBK"
@@ -97,14 +98,18 @@ else:
                 print "Genome for " + species + " already downloaded, converting to GBK"
                 print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
                 gbf_file = gzip.open(address, 'rb')
+                num_records = list(SeqIO.parse(gbf_file, "genbank"))
+                total_records = len(num_records)
+                have_seq = 0
+                no_seq = 0
                 for seq_record in SeqIO.parse(gbf_file, "genbank"):
                     sequence = seq_record.seq
                     if isinstance(sequence, Bio.Seq.UnknownSeq):
-                        check = "fail"
+                        no_seq += 1
                     else:
-                        check = "pass"
-                if check == "pass":
-                    print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.BLUE + out_name + bcolors.ENDC
+                        have_seq += 1
+                if total_records == have_seq:
+                    print bcolors.OKGREEN + "GBK file validated: " + bcolors.ENDC + str(total_records) + " records, writing to " + bcolors.BLUE + out_name + bcolors.ENDC
                     gbf_file = gzip.open(address, 'rb')
                     gb_out = open(out_name, "w")
                     gb_file = SeqIO.parse(gbf_file, "genbank")
@@ -113,7 +118,7 @@ else:
                     gb_out.close()
                     os.remove(address)
                 else:
-                    print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
+                    print bcolors.FAIL + "GBK file missing DNA sequence: " + bcolors.ENDC + "there were " + str(total_records) + " records but " + str(have_seq) + " have DNA sequence, skipping file"
                     os.remove(address)
                     continue
             else:
@@ -125,14 +130,19 @@ else:
                     print bcolors.OKGREEN + "Found: " + bcolors.ENDC + species + ". " + bcolors.OKGREEN + "Downloaded file: " + bcolors.ENDC + address
                     print bcolors.WARNING + "Now Loading: " + bcolors.ENDC + address
                     gbf_file = gzip.open(address, 'rb')
+                    num_records = list(SeqIO.parse(gbf_file, "genbank"))
+                    total_records = len(num_records)
+                    have_seq = 0
+                    no_seq = 0
+                    gbf_file = gzip.open(address, 'rb')
                     for seq_record in SeqIO.parse(gbf_file, "genbank"):
                         sequence = seq_record.seq
                         if isinstance(sequence, Bio.Seq.UnknownSeq):
-                            check = "fail"
+                            no_seq += 1
                         else:
-                            check = "pass"
-                    if check == "pass":
-                        print bcolors.OKGREEN + "GBK file validated:" + bcolors.ENDC + " writing to " + bcolors.BLUE + out_name + bcolors.ENDC
+                            have_seq += 1
+                    if total_records == have_seq:
+                        print bcolors.OKGREEN + "GBK file validated: " + bcolors.ENDC + str(total_records) + " records, writing to " + bcolors.BLUE + out_name + bcolors.ENDC
                         gbf_file = gzip.open(address, 'rb')
                         gb_out = open(out_name, "w")
                         gb_file = SeqIO.parse(gbf_file, "genbank")
@@ -141,7 +151,7 @@ else:
                         gb_out.close()
                         os.remove(address)
                     else:
-                        print bcolors.FAIL + "GBK file missing DNA sequence:" + bcolors.ENDC + " skipping file"
+                        print bcolors.FAIL + "GBK file missing DNA sequence: " + bcolors.ENDC + "there were " + str(total_records) + " records but " + str(have_seq) + " have DNA sequence, skipping file"
                         os.remove(address)
                 except:
                     print bcolors.FAIL + "Error: " + bcolors.ENDC + "file not found for " + species + " " + address + " it is likely an old assembly"
