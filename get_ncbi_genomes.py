@@ -200,7 +200,6 @@ else:
         os.remove('gi_list.tmp')
 
         total = len([name for name in os.listdir('.') if os.path.isfile(name)])
-        total -= 1
         print "------------------------------------------------"
         print ("Searched for: %s" % (organism))
         print "------------------------------------------------"
