@@ -24,31 +24,35 @@ else:
     dir = os.chdir(args.directory)
 os.chdir(dir)
 for file in glob.glob("*.gbk"):
-    print bcolors.WARNING + "Working on: " + bcolors.ENDC + file
     file_path = os.path.abspath(file)
     dir_path = os.path.abspath(dir)
     record = next(SeqIO.parse(file, "genbank"))
     tax = record.annotations["taxonomy"]
     try:
-        if 'Ascomycota' in tax:
+        if "Ascomycota" in tax:
             level = "Ascomycota"
-        if 'Basidiomycota' in tax:
+        if "Basidiomycota" in tax:
             level = "Basidiomycota"
-        if 'Microsporidia' in tax:
+        if "Microsporidia" in tax:
             level = "Microsporidia"
-        if 'Zygomycota' in tax:
+        if "Zygomycota" in tax:
             level = "Zygomycota"
-        if 'Mucormycotina' in tax:
+        if "Mucormycotina" in tax:
             level = "Zygomycota"
-        if 'Chytridiomycota' in tax:
+        if "Chytridiomycota" in tax:
             level = "Chytridiomycota"
-        if 'Rozella' in tax:
+        if "Rozella" in tax:
             level = "Chytridiomycota"
-        if 'Glomeromycota' in tax:
+        if "Glomeromycota" in tax:
             level = "Glomeromycota"
     except IndexError:
-        level = "no_taxonomy"  
-    if not os.path.exists(level):
-        os.makedirs(level)
+        level = "no_taxonomy"
+    try:
+        if not os.path.exists(level):
+            os.makedirs(level)
+    except NameError:
+        print bcolors.WARNING + "Working on: " + bcolors.ENDC + file + bcolors.FAIL + "  Tax level not defined, skipping file" + bcolors.ENDC
+        continue
     new_path = dir_path + "/" + level + "/" + file
     os.rename(file_path, new_path)
+    print bcolors.WARNING + "Working on: " + bcolors.ENDC + file + bcolors.OKGREEN + "  Moving to: " + bcolors.ENDC + new_path
