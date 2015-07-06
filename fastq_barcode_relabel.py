@@ -1,22 +1,13 @@
 #!/usr/bin/env python
-# Like fastq_strip_barcode_relabel except:
-#	relabels with barcode label instead of barcode sequence.
-#   trims at rev primer if found
-#   makes a report file
-# Expect seq = <barcode><primer><gene>
-# Allow 2 mismatches with primer
-# Allow 0 mismatches with barcode
-# Strips primer & barcode, adds barcode label to seq label.
-#sample usage: python fastq_strip_barcode_relabel7.py sample.fastq AGTGARTCATCGAATCTTTG TCCTCCGCTTATTGATATGC pgm_barcodes.fa Reads_ FACE1 50 175 > demux.fq 2> demux_log.txt
 
 import sys
 import argparse
-import fasta
-import fastq
-import primer
-import revcomp_lib
-import progress
-import die
+import edgar_scripts.fasta
+import edgar_scripts.fastq
+import edgar_scripts.primer
+import edgar_scripts.revcomp_lib
+import edgar_scripts.progress
+import edgar_scripts.die
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=48)
