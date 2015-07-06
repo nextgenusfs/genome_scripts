@@ -15,7 +15,9 @@ class bcolors:
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-    
+class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
+    def __init__(self,prog):
+        super(MyFormatter,self).__init__(prog,max_help_position=70)
 def find(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
@@ -25,15 +27,14 @@ parser=argparse.ArgumentParser(prog='OTU_clustering.py',
     description='''Script runs UPARSE OTU clustering. 
     Requires USEARCH and uc2otutab.py by Robert Edgar: http://drive5.com''',
     epilog="""Written by Jon Palmer (2015)  palmer.jona@gmail.com""",
-    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('fastq', help='FASTQ file')
-parser.add_argument('--out', default='out', help='Base output name')
-parser.add_argument('--maxee', default='1.0', help='Quality trim EE value')
-parser.add_argument('--pct_otu', default='97', help="OTU Clustering Percent")
+    formatter_class=MyFormatter)
+parser.add_argument('fastq', help='FASTQ file from fastq_strip_relabel.py')
+parser.add_argument('-o','--out', default='out', help='Base output name')
+parser.add_argument('-e','--maxee', default='1.0', help='Quality trim EE value')
+parser.add_argument('-p','--pct_otu', default='97', help="OTU Clustering Percent")
 parser.add_argument('--keep_singletons', action='store_true', help='Keep singletons before clustering')
 parser.add_argument('--uchime_ref', default='False', choices=['ITS1','ITS2'], help='Run UCHIME REF (specifiy DB)')
 parser.add_argument('--map_filtered_reads', action='store_true', help='map quality trimmed reads back to OTUs')
-
 args=parser.parse_args()
 
 usearch = "usearch8"
@@ -43,7 +44,7 @@ try:
     subprocess.call([usearch, '--version'])
     print "------------------------------------------------"
 except OSError:
-    print "%s not found in your PATH" % usearch
+    print + bcolors.FAIL + "%s not found in your PATH" % usearch + bcolors.ENDC
     usearch = raw_input("Enter full path to USEARCH or type exit to quit: ")
     
 if usearch == "exit":
