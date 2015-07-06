@@ -52,21 +52,21 @@ if usearch == "exit":
 #now run usearch8 fastq filtering step
 print bcolors.BLUE + "Running FASTQ Filtering" + bcolors.ENDC
 print "------------------------------------------------"
-filter_out = args.out + '.EE_' + args.maxee + '.filter.fq'
+filter_out = args.out + '.EE' + args.maxee + '.filter.fq'
 os.system('%s %s %s %s %s %s %s' % (usearch, '-fastq_filter', args.fastq, '-fastq_maxee', args.maxee, '-fastqout', filter_out))
 
 #now run usearch8 full length dereplication
 print "------------------------------------------------"
 print bcolors.BLUE + "Running Dereplication" + bcolors.ENDC
 print "------------------------------------------------"
-derep_out = args.out + '.derep.fa'
+derep_out = args.out + '.EE' + args.maxee + '.derep.fa'
 os.system('%s %s %s %s %s %s' % (usearch, '-derep_fulllength', filter_out, '-sizeout', '-fastaout', derep_out))
 
 #now run usearch 8 sort by size
 print "------------------------------------------------"
 print bcolors.BLUE + "Running SortBySize" + bcolors.ENDC
 print "------------------------------------------------"
-sort_out = args.out + '.sort.fa'
+sort_out = args.out + '.EE' + args.maxee + '.sort.fa'
 if args.keep_singletons:
     singletons = "1"
 else:
@@ -78,7 +78,7 @@ radius = str(100 - int(args.pct_otu))
 print "------------------------------------------------"
 print bcolors.BLUE + "Running UPARSE Clustering at %s percent" % (args.pct_otu) + bcolors.ENDC
 print "------------------------------------------------"
-otu_out = args.out + '.otus.fa'
+otu_out = args.out + '.EE' + args.maxee + '.otus.fa'
 os.system('%s %s %s %s %s %s %s %s' % (usearch, '-cluster_otus', sort_out, '-sizein -sizeout -relabel OTU_', '-otu_radius_pct', radius, '-otus', otu_out))
 
 #optional UCHIME Ref 
@@ -88,7 +88,7 @@ else:
     print "------------------------------------------------"
     print bcolors.BLUE + "Running UCHIME-Ref" + bcolors.ENDC
     print "------------------------------------------------"
-    uchime_out = args.out + '.uchime.fa'
+    uchime_out = args.out + '.EE' + args.maxee + '.uchime.fa'
     #You will want to customize these paths for new databases and machines
     if args.uchime_ref == "ITS1":
         its1_db = home + "/projects/DB/UCHIME/ITS1_ITS2_datasets/uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS1.fasta"
@@ -108,7 +108,7 @@ else:
 print "------------------------------------------------"
 print bcolors.BLUE + "Mapping Reads to OTUs with usearch_global" + bcolors.ENDC
 print "------------------------------------------------"
-uc_out = args.out + '.mapping.uc'
+uc_out = args.out + '.EE' + args.maxee + '.mapping.uc'
 if args.map_filtered_reads:
     reads = filter_out
 else:
@@ -118,7 +118,7 @@ os.system('%s %s %s %s %s %s %s' % (usearch, '-usearch_global', reads, '-strand 
 print "------------------------------------------------"
 print bcolors.BLUE + "Converting to OTU table" + bcolors.ENDC
 print "------------------------------------------------"
-otu_table = args.out + '.otu_table.txt'
+otu_table = args.out + '.EE' + args.maxee + '.otu_table.txt'
 try:
     subprocess.call("uc2otutab.py")
     uc2tab = "uc2otutab.py"
