@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import inspect
+import os
 import argparse
+import shutil
+from Bio import SeqIO
 import edgar_scripts.fasta as fasta
 import edgar_scripts.fastq as fastq
 import edgar_scripts.primer as primer
@@ -11,7 +15,11 @@ import edgar_scripts.die as die
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=48)
-        
+
+#get script path and barcode file name   
+script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+pgm_barcodes = script_path + '/edgar_scripts/pgm_barcodes.fa'
+
 parser=argparse.ArgumentParser(prog='fastq_barcode_relabel.py', usage="%(prog)s [options] file.fastq > out.fastq\n%(prog)s -h for help menu",
     description='''Script strips forward and reverse primers, finds barcodes, relabels, and then trim/pads reads to a set length''',
     epilog="""Written by Robert Edgar, modified slightly by Jon Palmer (2015) palmer.jona@gmail.com""",
@@ -19,11 +27,11 @@ parser=argparse.ArgumentParser(prog='fastq_barcode_relabel.py', usage="%(prog)s 
 parser.add_argument('fastq', help='FASTQ file')
 parser.add_argument('-f','--fwd_primer', dest="F_primer", default='AGTGARTCATCGAATCTTTG', help='Forward Primer (fITS7)')
 parser.add_argument('-r','--rev_primer', dest="R_primer", default='TCCTCCGCTTATTGATATGC', help='Reverse Primer (ITS4)')
-parser.add_argument('-b','--barcodes', default='pgm_barcodes.fa', help="Multi-fasta file with barcodes")
+parser.add_argument('-b','--list_barcodes', dest="barcodes", default='all', help='Enter Barcodes used separated by commas')
 parser.add_argument('-n','--name_prefix', dest="prefix", default='Reads_', help='Prefix for renaming reads')
 parser.add_argument('-m','--min_len', default='50', help='Minimum read length to keep')
 parser.add_argument('-l','--trim_len', default='250', help='Trim length for reads')
-parser.add_argument('-s','--mult_samples', dest="multi", default='False', help='Combine multiple samples (i.e. FACE1)')
+parser.add_argument('--mult_samples', dest="multi", default='False', help='Combine multiple samples (i.e. FACE1)')
 args=parser.parse_args()
 
 MAX_PRIMER_MISMATCHES = 2
@@ -31,12 +39,27 @@ MAX_PRIMER_MISMATCHES = 2
 FileName = args.fastq
 FwdPrimer = args.F_primer
 RevPrimer = args.R_primer
-BarcodeFileName = args.barcodes
 LabelPrefix = args.prefix
 SampleLabel = args.multi
 MinLen = int(args.min_len)
 TrimLen = int(args.trim_len)
 
+#get barcode list
+barcode_file = "barcodes_used.fa"
+if args.barcodes == "all":
+    shutil.copyfile(pgm_barcodes, barcode_file)
+else:
+    bc_list = args.barcodes.split(",")
+    inputSeqFile = open(pgm_barcodes, "rU")
+    SeqRecords = SeqIO.to_dict(SeqIO.parse(inputSeqFile, "fasta"))
+    for rec in bc_list:
+        name = "BC_" + rec
+        seq = SeqRecords[name].seq
+        outputSeqFile = open(barcode_file, "a")
+        outputSeqFile.write(">%s\n%s\n" % (name, seq))   
+    outputSeqFile.close()
+    inputSeqFile.close()
+BarcodeFileName = barcode_file
 RevPrimer = revcomp_lib.RevComp(RevPrimer)
 
 print >> sys.stderr, "Rev comp'd rev primer ", RevPrimer
