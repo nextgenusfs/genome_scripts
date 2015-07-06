@@ -21,8 +21,7 @@ class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
 def find(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
-            return os.path.join(root, name)
-            
+            return os.path.join(root, name)           
 parser=argparse.ArgumentParser(prog='OTU_clustering.py',
     description='''Script runs UPARSE OTU clustering. 
     Requires USEARCH and uc2otutab.py by Robert Edgar: http://drive5.com''',
