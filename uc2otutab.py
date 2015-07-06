@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import sys
 import os
-import edgar_scripts.uc
-import edgar_scripts.die
-import edgar_scripts.fasta
+import edgar_scripts.uc as uc
+import edgar_scripts.die as die
+import edgar_scripts.fasta as fasta
 
 if len(sys.argv)<2:
     print "Usage: " + sys.argv[0] + " table.uc > table.otu.txt"
