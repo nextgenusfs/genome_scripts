@@ -2,12 +2,12 @@
 
 import sys
 import argparse
-import edgar_scripts.fasta
-import edgar_scripts.fastq
-import edgar_scripts.primer
-import edgar_scripts.revcomp_lib
-import edgar_scripts.progress
-import edgar_scripts.die
+import edgar_scripts.fasta as fasta
+import edgar_scripts.fastq as fastq
+import edgar_scripts.primer as primer
+import edgar_scripts.revcomp_lib as revcomp_lib
+import edgar_scripts.progress as progress
+import edgar_scripts.die as die
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=48)
