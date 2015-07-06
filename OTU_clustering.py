@@ -17,7 +17,7 @@ class bcolors:
     ENDC = '\033[0m'
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
-        super(MyFormatter,self).__init__(prog,max_help_position=70)
+        super(MyFormatter,self).__init__(prog,max_help_position=50)
 def find(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
@@ -32,8 +32,8 @@ parser.add_argument('fastq', help='FASTQ file from fastq_strip_relabel.py')
 parser.add_argument('-o','--out', default='out', help='Base output name')
 parser.add_argument('-e','--maxee', default='1.0', help='Quality trim EE value')
 parser.add_argument('-p','--pct_otu', default='97', help="OTU Clustering Percent")
-parser.add_argument('--keep_singletons', action='store_true', help='Keep singletons before clustering')
 parser.add_argument('--uchime_ref', default='False', choices=['ITS1','ITS2'], help='Run UCHIME REF (specifiy DB)')
+parser.add_argument('--keep_singletons', action='store_true', help='Keep singletons before clustering')
 parser.add_argument('--map_filtered_reads', action='store_true', help='map quality trimmed reads back to OTUs')
 args=parser.parse_args()
 
