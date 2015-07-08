@@ -6,24 +6,27 @@ import os
 import argparse
 import shutil
 from Bio import SeqIO
-import edgar_scripts.fasta as fasta
-import edgar_scripts.fastq as fastq
-import edgar_scripts.primer as primer
-import edgar_scripts.revcomp_lib as revcomp_lib
-import edgar_scripts.progress as progress
-import edgar_scripts.die as die
+
+import lib.fasta as fasta
+import lib.fastq as fastq
+import lib.primer as primer
+import lib.revcomp_lib as revcomp_lib
+import lib.progress as progress
+import lib.die as die
+
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=48)
 
 #get script path and barcode file name   
 script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-pgm_barcodes = script_path + '/edgar_scripts/pgm_barcodes.fa'
+pgm_barcodes = script_path + '/lib/pgm_barcodes.fa'
 
 parser=argparse.ArgumentParser(prog='fastq_barcode_relabel.py', usage="%(prog)s [options] file.fastq > out.fastq\n%(prog)s -h for help menu",
     description='''Script strips forward and reverse primers, finds barcodes, relabels, and then trim/pads reads to a set length''',
     epilog="""Written by Robert Edgar, modified slightly by Jon Palmer (2015) palmer.jona@gmail.com""",
     formatter_class=MyFormatter)
+
 parser.add_argument('fastq', help='FASTQ file')
 parser.add_argument('-f','--fwd_primer', dest="F_primer", default='AGTGARTCATCGAATCTTTG', help='Forward Primer (fITS7)')
 parser.add_argument('-r','--rev_primer', dest="R_primer", default='TCCTCCGCTTATTGATATGC', help='Reverse Primer (ITS4)')
