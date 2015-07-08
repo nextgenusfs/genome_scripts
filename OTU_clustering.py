@@ -7,31 +7,40 @@ import sys
 import os
 import argparse
 import subprocess
+import inspect
 from os.path import expanduser
 home = expanduser("~")
+
+#get script path for directory
+script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
 class bcolors:
     GREEN = '\033[92m'
     BLUE = '\033[36m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
+
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=50)
+
 def find(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
             return os.path.join(root, name)           
+
 parser=argparse.ArgumentParser(prog='OTU_clustering.py',
     description='''Script runs UPARSE OTU clustering. 
     Requires USEARCH and uc2otutab.py by Robert Edgar: http://drive5.com''',
     epilog="""Written by Jon Palmer (2015)  palmer.jona@gmail.com""",
     formatter_class=MyFormatter)
+
 parser.add_argument('fastq', help='FASTQ file from fastq_strip_relabel.py')
 parser.add_argument('-o','--out', default='out', help='Base output name')
 parser.add_argument('-e','--maxee', default='1.0', help='Quality trim EE value')
 parser.add_argument('-p','--pct_otu', default='97', help="OTU Clustering Percent")
-parser.add_argument('--uchime_ref', default='False', choices=['ITS1','ITS2'], help='Run UCHIME REF (specifiy DB)')
+parser.add_argument('--uchime_ref', default='False', choices=['ITS1','ITS2','Full'], help='Run UCHIME REF')
 parser.add_argument('--keep_singletons', action='store_true', help='Keep singletons before clustering')
 parser.add_argument('--map_filtered_reads', action='store_true', help='map quality trimmed reads back to OTUs')
 args=parser.parse_args()
@@ -89,19 +98,13 @@ else:
     print bcolors.BLUE + "Running UCHIME-Ref" + bcolors.ENDC
     print "------------------------------------------------"
     uchime_out = args.out + '.EE' + args.maxee + '.uchime.fa'
-    #You will want to customize these paths for new databases and machines
+    #You might need to update these in the future, but leaving data and version in name so it is obvious where they came from
     if args.uchime_ref == "ITS1":
-        its1_db = home + "/projects/DB/UCHIME/ITS1_ITS2_datasets/uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS1.fasta"
-        if os.path.exists(its1_db):
-            uchime_db = its1_db
-        else:
-            uchime_db = find("uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS1.fasta", home)
+        uchime_db = script_path + "/lib/uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS1.fasta"
     if args.uchime_ref == "ITS2":
-        its2_db = home + "/projects/DB/UCHIME/ITS1_ITS2_datasets/uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS2.fasta"
-        if os.path.exists(its2_db):
-            uchime_db = its2_db
-        else:
-            uchime_db = find("uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS2.fasta", home)
+        uchime_db = script_path + "/lib/uchime_sh_refs_dynamic_develop_985_11.03.2015.ITS2.fasta"
+    if args.uchime_ref == "Full":
+        uchime_db = script_path + "/lib/uchime_sh_refs_dynamic_original_985_11.03.2015.fasta"
     os.system('%s %s %s %s %s %s %s' % (usearch, '-uchime_ref', otu_out, '-strand plus -db', uchime_db, '-nonchimeras', uchime_out))
     
 #now map reads back to OTUs
