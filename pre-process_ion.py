@@ -18,12 +18,12 @@ class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=48)
 
-#get script path and barcode file name   
+#get script path and barcode file name
 script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 pgm_barcodes = script_path + '/lib/pgm_barcodes.fa'
 
-parser=argparse.ArgumentParser(prog='fastq_barcode_relabel.py', usage="%(prog)s [options] file.fastq > out.fastq\n%(prog)s -h for help menu",
-    description='''Script strips forward and reverse primers, finds barcodes, relabels, and then trim/pads reads to a set length''',
+parser=argparse.ArgumentParser(prog='pre-process_ion.py', usage="%(prog)s [options] file.fastq > out.fastq\n%(prog)s -h for help menu",
+    description='''Script finds barcodes, strips forward and reverse primers, relabels, and then trim/pads reads to a set length''',
     epilog="""Written by Robert Edgar, modified slightly by Jon Palmer (2015) palmer.jona@gmail.com""",
     formatter_class=MyFormatter)
 
@@ -59,12 +59,13 @@ else:
         name = "BC_" + rec
         seq = SeqRecords[name].seq
         outputSeqFile = open(barcode_file, "a")
-        outputSeqFile.write(">%s\n%s\n" % (name, seq))   
+        outputSeqFile.write(">%s\n%s\n" % (name, seq))
     outputSeqFile.close()
     inputSeqFile.close()
 BarcodeFileName = barcode_file
 RevPrimer = revcomp_lib.RevComp(RevPrimer)
 
+print >> sys.stderr, "Foward primer: ", FwdPrimer
 print >> sys.stderr, "Rev comp'd rev primer ", RevPrimer
 
 SeqCount = 0
@@ -89,7 +90,7 @@ def FindBarcode(Seq):
 		if Seq.startswith(Barcode):
 			return Barcode, BarcodeLabel
 	return "", ""
-	
+
 def OnRec(Label, Seq, Qual):
 	global PL, LabelPrefix, Barcode, SeqCount, OutCount, TooShortCount, PadCount
 	global BarcodeMismatchCount, FwdPrimerMismatchCount, RevPrimerStrippedCount
