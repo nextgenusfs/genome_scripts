@@ -9,21 +9,21 @@ ___
 
 
 #####1) Need to install Xcode (Developer Tools that Apple doesn’t install natively but supports):#####
-...```xcode-select --install```
+    ```xcode-select --install```
 
 #####2) Install HomeBrew (copy and paste this into terminal):#####
-...```ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)”```
+    ```ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)”```
 
 Then setup homebrew: type `brew doctor`, then type: `brew tap homebrew/science`
 
 #####3) Install some tools (GNU tools, python, CPAN, BLAST, HMMer3):#####
-...```brew install coreutils python cpanm blast hmmer```
+    ```brew install coreutils python cpanm blast hmmer```
 
 #####4) Install BioPython#####
-...```pip install biopython```
+    ```pip install biopython```
 
 #####5) Install BioPerl (CPAN is a helper script to install Perl Modules)#####
-...```sudo cpanm BioPerl```
+    ```sudo cpanm BioPerl```
 
 #####6) Install a good Text Editor, my favorite is Text Wrangler which also has command line tools that are useful#####
 ```
