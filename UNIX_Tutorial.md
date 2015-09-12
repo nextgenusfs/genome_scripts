@@ -9,21 +9,21 @@ ___
 
 
 #####1) Need to install Xcode (Developer Tools that Apple doesn’t install natively but supports):#####
-    ```xcode-select --install```
+```xcode-select --install```
 
 #####2) Install HomeBrew (copy and paste this into terminal):#####
-    ```ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)”```
+```ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)”```
 
 Then setup homebrew: type `brew doctor`, then type: `brew tap homebrew/science`
 
 #####3) Install some tools (GNU tools, python, CPAN, BLAST, HMMer3):#####
-    ```brew install coreutils python cpanm blast hmmer```
+```brew install coreutils python cpanm blast hmmer```
 
 #####4) Install BioPython#####
-    ```pip install biopython```
+```pip install biopython```
 
 #####5) Install BioPerl (CPAN is a helper script to install Perl Modules)#####
-    ```sudo cpanm BioPerl```
+```sudo cpanm BioPerl```
 
 #####6) Install a good Text Editor, my favorite is Text Wrangler which also has command line tools that are useful#####
 ```
@@ -48,14 +48,19 @@ So you could now run the script by typing the following:
 ```
 
 Since this is cumbersome and you have to type the entire path each time, there is a shortcut known as your environmental $PATH – essentially which folders the system searches for scripts (homebrew does this for you, github does not). This is controlled by a file called ~/.bash_profile.  If you have TextWrangler command line installed, type.
-```edit ~/.bash_profile   #will create a new file```
+```
+edit ~/.bash_profile   #will create a new file
+```
 
 Type the following into the text file and save it (will require password):
+
 ```export PATH=”/usr/local/NR-PKS_ms:$PATH”```
 
 Now in terminal you can type (this will refresh your terminal session and load in the ~/.bash_profile)
+
 `source ~/.bash_profile`
 
 Now you can simply type the name of the script, i.e.:
+
 ```get_ncbi_genomes.py -h```
 
