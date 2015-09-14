@@ -3,13 +3,13 @@
 ___
 ####Introduction to UNIX and Command line Bioinformatics####
 
-+[UNIX Tutorial (Mac/Linux)](http://www.ee.surrey.ac.uk/Teaching/Unix/unix1.html)
+*[UNIX Tutorial (Mac/Linux)](http://www.ee.surrey.ac.uk/Teaching/Unix/unix1.html)
 
-+[Python Tutorial (Win/Mac/Linux)](https://www.codecademy.com/en/tracks/python)
+*[Python Tutorial (Win/Mac/Linux)](https://www.codecademy.com/en/tracks/python)
 
-+[Perl Tutorial (Win/Mac/Linux)](http://learn-perl.org) (not as good as the Python tutorial…)
+*[Perl Tutorial (Win/Mac/Linux)](http://learn-perl.org) (not as good as the Python tutorial…)
 
-+[HomeBrew Package Manger](http://brew.sh)(this will save you so much time) (Mac)
+*[HomeBrew Package Manger](http://brew.sh)(this will save you so much time) (Mac)
 
 
 ___
@@ -35,16 +35,15 @@ Then setup homebrew: type `brew doctor`, then type: `brew tap homebrew/science`
 ```sudo cpanm BioPerl```
 
 #####6) Install a good Text Editor, my favorite is Text Wrangler which also has command line tools that are useful#####
-```
-https://s3.amazonaws.com/BBSW-download/TextWrangler_4.5.12.dmg
-http://pine.barebones.com/files/tw-cmdline-tools-4512.zip
-```
+[Download TextWrangler](https://s3.amazonaws.com/BBSW-download/TextWrangler_4.5.12.dmg)
+[Download TextWrangler Command Line Tools](http://pine.barebones.com/files/tw-cmdline-tools-4512.zip)
+
 
 GitHub is a repository for programs, scripts, etc.  It is free and public.  Lots of bioinformatics scripts reside on GitHub, and it can make it easy to install/update/share software:  My github repo: `https://github.com/nextgenusfs`
 
 Let’s say you want to install the scripts used in Kurt’s paper (download NCBI genomes), type following into terminal:
 First, move into desired folder to copy the folder of scripts to – a common place is the `/usr/local` folder.
-```
+```UNIX
 cd /usr/local
 git clone https://github.com/nextgenusfs/NR-PKS_ms.git
 ```
