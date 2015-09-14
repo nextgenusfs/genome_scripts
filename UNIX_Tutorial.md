@@ -3,6 +3,15 @@
 ___
 ####Introduction to UNIX and Command line Bioinformatics####
 
++[UNIX Tutorial (Mac/Linux)](http://www.ee.surrey.ac.uk/Teaching/Unix/unix1.html)
+
++[Python Tutorial (Win/Mac/Linux)](https://www.codecademy.com/en/tracks/python)
+
++[Perl Tutorial (Win/Mac/Linux)](http://learn-perl.org) (not as good as the Python tutorial…)
+
++[HomeBrew Package Manger](http://brew.sh)(this will save you so much time) (Mac)
+
+
 ___
 ####There are many ways to set up your Mac, here is how I would do it. (type or copy/paste commands into terminal)####
 
