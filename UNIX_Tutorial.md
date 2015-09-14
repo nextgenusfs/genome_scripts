@@ -36,6 +36,7 @@ Then setup homebrew: type `brew doctor`, then type: `brew tap homebrew/science`
 
 #####6) Install a good Text Editor, my favorite is Text Wrangler which also has command line tools that are useful#####
 [Download TextWrangler](https://s3.amazonaws.com/BBSW-download/TextWrangler_4.5.12.dmg)
+
 [Download TextWrangler Command Line Tools](http://pine.barebones.com/files/tw-cmdline-tools-4512.zip)
 
 
@@ -51,18 +52,16 @@ git clone https://github.com/nextgenusfs/NR-PKS_ms.git
 This will download all of the scripts from the github repo into a folder named ‘NR-PKS_ms’ in your current directory.
 
 So you could now run the script by typing the following:
-```
-/usr/local/NR-PKS_ms/get_ncbi_genomes.py
-```
+
+```/usr/local/NR-PKS_ms/get_ncbi_genomes.py```
 
 Since this is cumbersome and you have to type the entire path each time, there is a shortcut known as your environmental $PATH – essentially which folders the system searches for scripts (homebrew does this for you, github does not). This is controlled by a file called ~/.bash_profile.  If you have TextWrangler command line installed, type.
-```
-edit ~/.bash_profile   #will create a new file
-```
+
+```edit ~/.bash_profile   #will create a new file```
 
 Type the following into the text file and save it (will require password):
 
-```export PATH=”/usr/local/NR-PKS_ms:$PATH”```
+`export PATH=”/usr/local/NR-PKS_ms:$PATH”`
 
 Now in terminal you can type (this will refresh your terminal session and load in the ~/.bash_profile)
 
