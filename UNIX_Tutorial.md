@@ -44,6 +44,7 @@ GitHub is a repository for programs, scripts, etc.  It is free and public.  Lots
 
 Let’s say you want to install the scripts used in Kurt’s paper (download NCBI genomes), type following into terminal:
 First, move into desired folder to copy the folder of scripts to – a common place is the `/usr/local` folder.
+
 ```UNIX
 cd /usr/local
 git clone https://github.com/nextgenusfs/NR-PKS_ms.git
@@ -53,11 +54,11 @@ This will download all of the scripts from the github repo into a folder named �
 
 So you could now run the script by typing the following:
 
-```/usr/local/NR-PKS_ms/get_ncbi_genomes.py```
+`/usr/local/NR-PKS_ms/get_ncbi_genomes.py`
 
 Since this is cumbersome and you have to type the entire path each time, there is a shortcut known as your environmental $PATH – essentially which folders the system searches for scripts (homebrew does this for you, github does not). This is controlled by a file called ~/.bash_profile.  If you have TextWrangler command line installed, type.
 
-```edit ~/.bash_profile   #will create a new file```
+`edit ~/.bash_profile   #will create a new file`
 
 Type the following into the text file and save it (will require password):
 
@@ -69,5 +70,5 @@ Now in terminal you can type (this will refresh your terminal session and load i
 
 Now you can simply type the name of the script, i.e.:
 
-```get_ncbi_genomes.py -h```
+`get_ncbi_genomes.py -h`
 
