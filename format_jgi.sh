@@ -74,7 +74,7 @@ $new_header"
             echo "------------------------"
             echo "Running GAG."
             echo "------------------------"
-            gag.py fasta=genome.fasta gff=genome.gff
+            gag.py -f genome.fasta -g genome.gff
             cd $dir/$3/gag_output
             cp genome.fasta genome.fsa
             echo "------------------------"
@@ -130,7 +130,7 @@ $new_header"
     echo "------------------------"
     echo "Running GAG."
     echo "------------------------"
-    gag.py fasta=genome.fasta gff=genome.gff
+    gag.py -f genome.fasta -g genome.gff
     cd $dir/$3/gag_output
     cp genome.fasta genome.fsa
     echo "------------------------"
@@ -150,7 +150,7 @@ $new_header"
     echo "------------------------"
     echo "Running GAG."
     echo "------------------------"
-    gag.py fasta=genome.fasta gff=genome.gff anno=$3.annotation.txt out=gag_product
+    gag.py -f genome.fasta -g genome.gff -a $3.annotation.txt -o gag_product
     cd $dir/$3/gag_output/gag_product
     cp genome.fasta genome.fsa
     echo "------------------------"

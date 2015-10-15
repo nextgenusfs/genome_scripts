@@ -49,7 +49,7 @@ else
     echo "------------------------"
     echo "Running GAG."
     echo "------------------------"
-    gag.py fasta=genome.fasta gff=genome.gff anno=annotations.txt
+    gag.py -f genome.fasta -g genome.gff -a annotations.txt
     cd $dir/$3/gag_output
     cp genome.fasta genome.fsa
     echo "------------------------"
