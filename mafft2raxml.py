@@ -171,41 +171,8 @@ if countN > 0:
     clean6 = args.out + '.mafft.clean6.fa'
     AlignClean(clean5, clean6)
     print("Length of alignment: %s\nN's in sixth pass: %s" % (str(total_len), str(countN)))
+    RunRAxML(clean6)
 else:
     RunRAxML(clean5)
     os._exit(1)
-
-if countN > 0:
-    clean7 = args.out + '.mafft.clean7.fa'
-    AlignClean(clean6, clean7)
-    print("Length of alignment: %s\nN's in seventh pass: %s" % (str(total_len), str(countN)))
-else:
-    RunRAxML(clean6)
-    os._exit(1)
-
-if countN > 0:
-    clean8 = args.out + '.mafft.clean8.fa'
-    AlignClean(clean7, clean8)
-    print("Length of alignment: %s\nN's in eighth pass: %s" % (str(total_len), str(countN)))
-else:
-    RunRAxML(clean7)
-    os._exit(1)
-
-if countN > 0:
-    clean9 = args.out + '.mafft.clean9.fa'
-    AlignClean(clean8, clean9)
-    print("Length of alignment: %s\nN's in ninth pass: %s" % (str(total_len), str(countN)))
-else:
-    RunRAxML(clean8)
-    os._exit(1)
-
-if countN > 0:
-    clean3 = args.out + '.mafft.clean10.fa'
-    AlignClean(clean9, clean10)
-    print("Length of alignment: %s\nN's in final pass: %s" % (str(total_len), str(countN)))
-    RunRAxML(clean10)
-else:
-    RunRAxML(clean9)
-    os._exit(1)
-
 
