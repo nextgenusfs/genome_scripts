@@ -324,7 +324,14 @@ if args.fwd_reads:
                 else:
                     genes = 'none'
                 Cluster = ", ".join([str(x) for x in cluster_genes])
-                output.write("%s\t%s:%s-%s\t%s\t%s\t%i\t%s\t%s:%s-%s\t%s\t%i\t%s%%\t%s\t%s\n" % (cluster, scaffold, cluster_start, cluster_end, cluster_length, enzymes, len(cluster_genes), BAC, scaffold, BAC_start, BAC_end, BAC_length, len(gene_list), coverage, Cluster, genes))
+                #subtract SM cluster list from BAC list to get which genes are missing
+                gene_list = set(gene_list)
+                miss_genes = [x for x in cluster_genes if x not in gene_list]
+                if miss_genes:
+                    missing = ", ".join([str(x) for x in miss_genes])
+                else:
+                    missing = 'none'
+                output.write("%s\t%s:%s-%s\t%s\t%s\t%i\t%s\t%s:%s-%s\t%s\t%i\t%s%%\t%s\t%s\t%s\n" % (cluster, scaffold, cluster_start, cluster_end, cluster_length, enzymes, len(cluster_genes), BAC, scaffold, BAC_start, BAC_end, BAC_length, len(gene_list), coverage, Cluster, genes, missing))
 
 else: #do not map reads, but just reformat antiSMASH results in same way as above
 
