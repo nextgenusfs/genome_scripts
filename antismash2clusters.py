@@ -2,6 +2,7 @@
 
 import sys, os, shutil, subprocess, argparse
 from Bio import SeqIO
+from natsort import natsorted
 
 #can make this a bit more complicated but simplify output
 #would require bedtools, bwa, samtools
@@ -11,7 +12,7 @@ class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self,prog):
         super(MyFormatter,self).__init__(prog,max_help_position=48)
 parser=argparse.ArgumentParser(prog='antismash2clusters.py',
-    description='''Script that can map paired end jumping library sequences to genome, parse antiSMASH SM cluster results, and determine with jumping library hits contain secondary metabolite clusters. ''',
+    description='''Script that can map paired end jumping library sequences to genome, parse antiSMASH SM cluster results, and determine with jumping library hits contain secondary metabolite clusters.''',
     epilog="""Written by Jon Palmer (2016) nextgenusfs@gmail.com""",
     formatter_class = MyFormatter)
 parser.add_argument('-i','--input', required=True, help='Genome in FASTA format')
@@ -23,17 +24,13 @@ parser.add_argument('-f','--fwd_reads', help='Forward reads from jumping library
 parser.add_argument('-r','--rev_reads', help='Reverse reads from jumping library (BAC reverse sequences)')
 parser.add_argument('--cpus', default='1', help='Number of CPUs to use with BWA)')
 parser.add_argument('--lib_range', default='5000-200000', help='Range of insert sizes in jumping library')
-parser.add_argument('--cluster_padding', default=0, type=int, help='Number of bp to pad each side of predicted cluster for summary output')
+parser.add_argument('--cluster_padding', default=15000, type=int, help='Number of bp to pad each side of predicted cluster for summary output')
 args=parser.parse_args()
 
 def which(name):
     try:
         with open(os.devnull) as devnull:
-            diff = ['tbl2asn', 'dustmasker'] #relic from funannotate code, shouldn't cause any harm here
-            if not any(name in x for x in diff):
-                subprocess.Popen([name], stdout=devnull, stderr=devnull).communicate()
-            else:
-                subprocess.Popen([name, '--version'], stdout=devnull, stderr=devnull).communicate()
+            subprocess.Popen([name, '--version'], stdout=devnull, stderr=devnull).communicate()
     except OSError as e:
         if e.errno == os.errno.ENOENT:
             return False
@@ -64,10 +61,9 @@ def countfastq(input):
 
 def ParseAntiSmash(input, tmpdir, output):
     print("Now parsing antismash genbank result, finding clusters and backbone enzymes")
-    global BackBone
-    BackBone = {}
-    backboneCount = 0
-    clusterCount = 0
+    global BackBone, SMCOGs, bbSubType, bbDomains, Offset, smProducts, InterPro, PFAM
+    BackBone = {}; SMCOGs = {}; bbSubType = {}; bbDomains = {}; Offset = {}; smProducts = {}; InterPro = {}; PFAM = {}
+    backboneCount = 0; clusterCount = 0; cogCount = 0
     #parse antismash genbank to get clusters in bed format and slice the record for each cluster prediction
     with open(output, 'w') as antibed:
         with open(input, 'rU') as input:
@@ -75,6 +71,7 @@ def ParseAntiSmash(input, tmpdir, output):
             for record in SeqRecords:
                 for f in record.features:
                     if f.type == "source":
+                        record_start = f.location.start
                         record_end = f.location.end
                     if f.type == "cluster":
                         clusterCount += 1
@@ -90,17 +87,58 @@ def ParseAntiSmash(input, tmpdir, output):
                         if sub_end > record_end:
                             sub_end = record_end
                         sub_record = record[sub_start:sub_end]
-                        sub_record_name = os.path.join(tmpdir, 'cluster_'+clusternum+'.gbk')
+                        Offset['Cluster_'+clusternum] = sub_start
+                        sub_record_name = os.path.join(tmpdir, 'Cluster_'+clusternum+'.gbk')
                         with open(sub_record_name, 'w') as clusterout:
                             SeqIO.write(sub_record, clusterout, 'genbank')
+                    Domains = []
                     if f.type == "CDS":
-                        if f.qualifiers.get('sec_met'):
-                            ID = f.qualifiers.get('locus_tag')[0]
-                            if f.qualifiers.get('sec_met')[0].startswith('Type:'):
-                                type = f.qualifiers.get('sec_met')[0].replace('Type: ', '')
-                            backboneCount += 1
-                            BackBone[ID] = type
-    print("Found %i biosynthetic enyzmes predicted by antiSMASH in %i clusters" % (backboneCount, clusterCount))
+                        ID = f.qualifiers.get('locus_tag')[0]
+                        #if not ID.endswith('-T1'):
+                            #ID = ID + '-T1'                       
+                        if f.qualifiers.get('sec_met'):            
+                            for k, v in f.qualifiers.items():
+                                if k == 'sec_met':
+                                    for i in v:
+                                        if i.startswith('Type:'):
+                                            type = i.replace('Type: ', '')
+                                            backboneCount += 1
+                                            BackBone[ID] = type
+                                        if i.startswith('NRPS/PKS subtype:'):
+                                            subtype = i.replace('NRPS/PKS subtype: ', '')
+                                            bbSubType[ID] = subtype
+                                        if i.startswith('NRPS/PKS Domain:'):
+                                            doms = i.replace('NRPS/PKS Domain: ', '')
+                                            doms = doms.split('. ')[0]
+                                            Domains.append(doms)
+                                bbDomains[ID] = Domains
+                        for k,v in f.qualifiers.items():
+                            if k == 'note':
+                                for i in v:
+                                    if i.startswith('smCOG:'):
+                                        COG = i.replace('smCOG: ', '')
+                                        COG = COG.split(' (')[0]
+                                        SMCOGs[ID] = COG
+                                        cogCount += 1
+                                    elif not i.startswith('smCOG tree'):
+                                        notes = i
+                                        smProducts[ID] = notes
+                            if k == 'db_xref':
+                                for i in v:
+                                    if i.startswith('InterPro:'):
+                                        interpro = i.replace('InterPro:', '')
+                                        if not ID in InterPro:
+                                            InterPro[ID] = [interpro]
+                                        else:
+                                            InterPro[ID].append(interpro)
+                                    if i.startswith('PFAM:'):
+                                        pfam = i.replace('PFAM:', '')
+                                        if not ID in PFAM:
+                                            PFAM[ID] = [pfam]
+                                        else:
+                                            PFAM[ID].append(pfam)
+                            
+            print("Found %i clusters, %i biosynthetic enyzmes, and %i smCOGs predicted by antiSMASH" % (clusterCount, backboneCount, cogCount))
 
 def GetClusterGenes():
     global dictClusters
@@ -170,6 +208,7 @@ antismash = args.antismash
 outputDir = args.tmpdir
 cpus = args.cpus
 FinalOut = args.out + '.bac.overlap.txt'
+ClustersOut = args.out + '.secmet.clusters.txt'
 sam_out = os.path.join(outputDir, 'bwa.sam')
 bam_out = os.path.join(outputDir, 'bwa.bam')
 sortbam = os.path.join(outputDir, 'bwa.sort')
@@ -256,12 +295,12 @@ if args.fwd_reads:
 
     #finally parse all information to create a tab delimited output of results
     with open(FinalOut, 'w') as output:
-        output.write("#Cluster\tCluster Location\tCluster length\tBackbone enzymes(s)\tNumber of cluster genes\tBAC name\tBAC location\tBAC length\tCluster Coverage\tCluster genes\tBAC genes\n")
+        output.write("#Cluster\tCluster Location\tCluster length\tBackbone enzymes(s)\tNumber of cluster genes\tBAC name\tBAC location\tBAC length\tNumber of genes in BAC\tCluster Coverage\tCluster genes\tBAC genes\n")
         with open(ClusterBed, 'rU') as input:
             for line in input:
                 cols = line.split('\t')
                 cluster = cols[3]
-                cluster_genes = dictClusters[cluster] #this should be list of genes in cluster
+                cluster_genes = dictClusters[cluster]#this should be list of genes in cluster
                 backbone_enzyme = []
                 for k, v in BackBone.items(): #loop through backbone genes and grab those from cluster
                     if k in cluster_genes:
@@ -280,9 +319,12 @@ if args.fwd_reads:
                     continue
                 coverage = int(cols[12]) / float(cluster_length) * 100.0
                 gene_list = dictBAC.get(BAC)
-                genes = ", ".join([str(x) for x in gene_list])
+                if gene_list:
+                    genes = ", ".join([str(x) for x in gene_list])
+                else:
+                    genes = 'none'
                 Cluster = ", ".join([str(x) for x in cluster_genes])
-                output.write("%s\t%s:%s-%s\t%s\t%s\t%i\t%s\t%s:%s-%s\t%s\t%s%%\t%s\t%s\n" % (cluster, scaffold, cluster_start, cluster_end, cluster_length, enzymes, len(cluster_genes), BAC, scaffold, BAC_start, BAC_end, BAC_length, coverage, Cluster, genes))
+                output.write("%s\t%s:%s-%s\t%s\t%s\t%i\t%s\t%s:%s-%s\t%s\t%i\t%s%%\t%s\t%s\n" % (cluster, scaffold, cluster_start, cluster_end, cluster_length, enzymes, len(cluster_genes), BAC, scaffold, BAC_start, BAC_end, BAC_length, len(gene_list), coverage, Cluster, genes))
 
 else: #do not map reads, but just reformat antiSMASH results in same way as above
 
@@ -290,4 +332,96 @@ else: #do not map reads, but just reformat antiSMASH results in same way as abov
     GetClusterGenes()
 
 #so if you got here, that means you have 1) already created your BAC file and/or 2) have clusters split into gbk files
+#now lets pull out information for each cluster into a tab delimited file
+'''#dictionaries available now 
+BackBone --> ID = type
+SMCOGs --> ID = SMCOG
+bbSubType --> ID = NRPS/PKS subtype
+dictClusters --> ClusterID = [genes]
+bbDomains --> ID = [domains]
+'''
+#print SMCOGs
+#print BackBone
+#print bbSubType
+#print bbDomains
+#print dictClusters
+#print Offset
+#print smProducts
+
+for file in os.listdir(outputDir):
+    if file.endswith('.gbk'):
+        base = file.replace('.gbk', '')
+        base = base.capitalize()
+        outputName = os.path.join(outputDir, base+'.secmet.cluster.txt')
+        file = os.path.join(outputDir, file)
+        with open(outputName, 'w') as output:
+            output.write("#%s\n" % base)
+            output.write("#GeneID\tChromosome:start-stop\tStrand\tClusterPred\tBackbone Enzyme\tDomains\tProduct\tsmCOGs\tInterPro\tPFAM\tNote\tProtein Seq\tDNA Seq\n")
+            with open(file, 'rU') as input:
+                SeqRecords = SeqIO.parse(input, 'genbank')
+                for record in SeqRecords:
+                    for f in record.features:
+                        if f.type == "CDS":
+                            name = f.qualifiers["locus_tag"][0]
+                            prot_seq = f.qualifiers['translation'][0]
+                            cluster_genes = dictClusters.get(base) #this should be list of genes in each cluster
+                            start = f.location.nofuzzy_start
+                            actualStart = int(start) + int(Offset.get(base)) + 1 #account for python numbering shift?
+                            end = f.location.nofuzzy_end
+                            actualEnd = int(end) + int(Offset.get(base))
+                            strand = f.location.strand
+                            if strand == 1:
+                                strand = '+'
+                                DNA_seq = record.seq[start:end]
+                            elif strand == -1:
+                                strand = '-'
+                                DNA_seq = record.seq[start:end].reverse_complement()
+                            chr = record.id
+                            product = f.qualifiers["product"][0]
+                            if name in cluster_genes:
+                                location = 'cluster_pred'
+                            else:
+                                location = 'flanking'
+                            if name in bbSubType:
+                                enzyme = bbSubType.get(name)
+                            else:
+                                if name in BackBone:
+                                    enzyme = BackBone.get(name)
+                                else:
+                                    enzyme = '.'
+                            if name in SMCOGs:
+                                cog = SMCOGs.get(name)
+                                #cog = enzyme.split(":")[-1]
+                            else:
+                                cog = '.'
+                            if name in bbDomains:
+                                domains = ";".join(bbDomains.get(name))
+                            else:
+                                domains = '.'
+                            if name in smProducts:
+                                note = smProducts.get(name)
+                            else:
+                                note = '.'
+                            if name in InterPro:
+                                IP = ";".join(InterPro.get(name))
+                            else:
+                                IP = '.'
+                            if name in PFAM:
+                                PF = ":".join(PFAM.get(name))
+                            else:
+                                PF = '.'
+                            output.write("%s\t%s:%i-%i\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (name, chr, actualStart, actualEnd, strand, location, enzyme, domains, product, cog, IP, PF, note, prot_seq, DNA_seq))
+                                              
+#now put together into a single file
+finallist = []
+for file in os.listdir(outputDir):
+    if file.endswith('secmet.cluster.txt'):
+        file = os.path.join(outputDir, file)
+        finallist.append(file)
+with open(ClustersOut, 'w') as output:
+    for file in natsorted(finallist):
+        with open(file, 'rU') as input:
+            output.write(input.read())
+            output.write('\n\n')
+
 os._exit(1)
