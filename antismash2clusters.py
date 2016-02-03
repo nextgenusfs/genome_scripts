@@ -295,7 +295,7 @@ if args.fwd_reads:
 
     #finally parse all information to create a tab delimited output of results
     with open(FinalOut, 'w') as output:
-        output.write("#Cluster\tCluster Location\tCluster length\tBackbone enzymes(s)\tNumber of cluster genes\tBAC name\tBAC location\tBAC length\tNumber of genes in BAC\tCluster Coverage\tCluster genes\tBAC genes\n")
+        output.write("#Cluster\tCluster Location\tCluster length\tBackbone enzymes(s)\tNumber of cluster genes\tBAC name\tBAC location\tBAC length\tNumber of genes in BAC\tCluster Coverage\tCluster genes\tBAC genes\tCluster genes missing in BAC\n")
         with open(ClusterBed, 'rU') as input:
             for line in input:
                 cols = line.split('\t')
