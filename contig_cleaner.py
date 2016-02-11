@@ -45,7 +45,7 @@ def Sortbysize(input):
         for rec in records:
             contigs.append(rec.id)
         return contigs
-        
+
 def getFasta(sequences, header):
     with open('query.fa', 'w') as fasta:
         with open(sequences, 'rU') as input:
@@ -78,15 +78,15 @@ def runNucmer(query, reference, output):
             cols = line.split('\t')
             match = (float(cols[6]), float(cols[9]))
             if match[0] > args.pident and match[1] > args.cov:
-                print "%s is duplicated: %i%% identity over %i%% of the contig" % (output, match[0], match[1])
+                print "%s appears duplicated: %i%% identity over %i%% of the contig. contig length: %s " % (output, match[0], match[1], cols[7])
                 #print match
                 garbage = True
-                break          
+                break
         if not garbage:
-            keepers.append(output)       
+            keepers.append(output)
     os.remove(input)
     os.remove(coord_out)
-    
+
 #run some checks of dependencies first
 programs = ['nucmer', 'show-coords']
 CheckDependencies(programs)
@@ -107,7 +107,7 @@ for i in range(0, len(scaffolds)):
     os.remove('reference.fa')
 
 print"------------------------------------"
-print"%i input contigs, %i duplciated, %i written to file" % (len(scaffolds), (len(scaffolds) - len(keepers)), len(keepers))
+print"%i input contigs, %i duplicated, %i written to file" % (len(scaffolds), (len(scaffolds) - len(keepers)), len(keepers))
 
 #finally write a new reference based on list of keepers
 with open(args.out, 'w') as output:
