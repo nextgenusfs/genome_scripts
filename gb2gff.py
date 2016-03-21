@@ -12,7 +12,7 @@ with open(sys.argv[1], 'rU') as gbk:
                 ID = f.qualifiers['locus_tag'][0]
                 product = f.qualifiers['product'][0]
                 start = f.location.nofuzzy_start + 1
-                end = f.location.nofuzzy_end + 1
+                end = f.location.nofuzzy_end
                 strand = f.location.strand
                 if strand == 1:
                     strand = '+'
@@ -24,14 +24,14 @@ with open(sys.argv[1], 'rU') as gbk:
                 sys.stdout.write("%s\tGenBank\tmRNA\t%s\t%s\t.\t%s\t.\tID=%s-T1;Parent=%s;product=%s\n" % (chr, start, end, strand, ID, ID, product))
                 if num_exons < 1: #only a single exon
                     ex_start = str(f.location.nofuzzy_start + 1)
-                    ex_end = str(f.location.nofuzzy_end + 1)
+                    ex_end = str(f.location.nofuzzy_end)
                     sys.stdout.write("%s\tGenBank\texon\t%s\t%s\t.\t%s\t.\tID=%s-T1.exon1;Parent=%s-T1\n" % (chr, ex_start, ex_end, strand, ID, ID))
                     sys.stdout.write("%s\tGenBank\tCDS\t%s\t%s\t.\t%s\t%i\tID=%s-T1.cds;Parent=%s-T1\n" % (chr, ex_start, ex_end, strand, current_phase, ID, ID))
                 else: #more than 1 exon, so parts sub_features
                     if f.location.strand == 1:
                         for i in range(0,num_exons):
                             ex_start = str(f.sub_features[i].location.nofuzzy_start + 1)
-                            ex_end = str(f.sub_features[i].location.nofuzzy_end + 1)
+                            ex_end = str(f.sub_features[i].location.nofuzzy_end)
                             ex_num = i + 1
                             sys.stdout.write("%s\tGenBank\texon\t%s\t%s\t.\t%s\t.\tID=%s-T1.exon%i;Parent=%s-T1\n" % (chr, ex_start, ex_end, strand, ID, ex_num, ID))
                             sys.stdout.write("%s\tGenBank\tCDS\t%s\t%s\t.\t%s\t%i\tID=%s-T1.cds;Parent=%s-T1\n" % (chr, ex_start, ex_end, strand, current_phase, ID, ID))
@@ -41,7 +41,7 @@ with open(sys.argv[1], 'rU') as gbk:
                     else:
                         for i in reversed(range(0,num_exons)):
                             ex_start = str(f.sub_features[i].location.nofuzzy_start + 1)
-                            ex_end = str(f.sub_features[i].location.nofuzzy_end + 1)
+                            ex_end = str(f.sub_features[i].location.nofuzzy_end)
                             ex_num = num_exons - i
                             sys.stdout.write("%s\tGenBank\texon\t%s\t%s\t.\t%s\t.\tID=%s-T1.exon%i;Parent=%s-T1\n" % (chr, ex_start, ex_end, strand, ID, ex_num, ID))
                             sys.stdout.write("%s\tGenBank\tCDS\t%s\t%s\t.\t%s\t%i\tID=%s-T1.cds;Parent=%s-T1\n" % (chr, ex_start, ex_end, strand, current_phase, ID, ID))
@@ -51,8 +51,8 @@ with open(sys.argv[1], 'rU') as gbk:
 
             if f.type == 'tRNA':
                 ID = f.qualifiers['locus_tag'][0]
-                start = f.location.nofuzzy_start
-                end = f.location.nofuzzy_end
+                start = str(f.location.nofuzzy_start + 1)
+                end = str(f.location.nofuzzy_end)
                 strand = f.location.strand
                 if strand == 1:
                     strand = '+'
