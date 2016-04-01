@@ -14,7 +14,7 @@ with open(sys.argv[1], 'rU') as input:
         O = 'o:'+col[12].strip()
         F = 'f:'+col[14].strip()
         G = 'g:'+col[18].strip()
-        S = 's:'+col[20].strip()
+        S = 's:'+col[20].strip().replace('.', '')
         ID = col[39].strip()
         GB = col[41].strip()
         Seq = col[42].replace('-', '')
@@ -26,6 +26,4 @@ with open(sys.argv[1], 'rU') as input:
                 tax.append(i)
         tax_fmt = ','.join(tax)
         if not GB == '':
-            sys.stdout.write('>%s|%s;tax=%s\n%s\n' % (ID, GB, tax_fmt, Seq))
-        else:
-            sys.stdout.write('>%s;tax=%s\n%s\n' % (ID, tax_fmt, Seq))
+            sys.stdout.write('>%s;tax=%s\n%s\n' % (GB, tax_fmt, Seq))
