@@ -2,22 +2,36 @@
 
 import sys, re
 
+if len(sys.argv) < 2:
+    print("Purpose: Script will parse Bold DB txt output to fasta file, keeping only records deposited in GenBank\nUsage: bold2utax.py bold_data.txt > formatted.fa")
+    sys.exit(1)
+
 with open(sys.argv[1], 'rU') as input:
     for line in input:
         line = line.replace('\n', '')
         if line.startswith('processid'):
-            continue
+            header = line.split('\t')
+            pid = header.index('phylum_name')
+            cid = header.index('class_name')
+            oid = header.index('order_name')
+            fid = header.index('family_name')
+            gid = header.index('genus_name')
+            sid = header.index('species_name')
+            seqid = header.index('nucleotides')
+            boldid = header.index('sequenceID')
+            gbid = header.index('genbank_accession')
+            continue      
         col = line.split('\t')
         K = 'k:Animalia'
-        P = 'p:'+col[8].strip()
-        C = 'c:'+col[10].strip()
-        O = 'o:'+col[12].strip()
-        F = 'f:'+col[14].strip()
-        G = 'g:'+col[18].strip()
-        S = 's:'+col[20].strip().replace('.', '')
-        ID = col[39].strip()
-        GB = col[41].strip()
-        Seq = col[42].replace('-', '')
+        P = 'p:'+col[pid].strip()
+        C = 'c:'+col[cid].strip()
+        O = 'o:'+col[oid].strip()
+        F = 'f:'+col[fid].strip()
+        G = 'g:'+col[gid].strip()
+        S = 's:'+col[sid].strip().replace('.', '')
+        ID = col[boldid].strip()
+        GB = col[gbid].strip()
+        Seq = col[seqid].replace('-', '')
         Seq = re.sub('N*$', '', Seq)
         Seq = re.sub('^N*', '', Seq)
         tax = []
