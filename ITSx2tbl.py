@@ -13,6 +13,9 @@ This will produce an output file called, 'output.positions.txt', you can then ru
 
 python ITSx2tbl.py output.positions.txt > genbank.tbl
 '''
+if len(sys.argv) < 2:
+    print"Usage: ITSx2tbl.py output.positions.txt"
+    sys.exit(1)
 
 with open(sys.argv[1], 'rU') as input:
     for line in input:
