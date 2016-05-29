@@ -7,8 +7,6 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('gbk', help='Genbank file')
 parser.add_argument('fasta', help='fasta file')
-parser.add_argument('--maker', action="store_true", help='Maker -T1 ending to names')
-parser.add_argument('--jgi', action="store_true", help='JGI use name instead of locus tag')
 args = parser.parse_args()
 
 gbk_filename = args.gbk
@@ -20,21 +18,23 @@ ending = "-T1"
 for seq_record in SeqIO.parse(input_handle, "genbank") :
     for seq_feature in seq_record.features :
         if seq_feature.type=="CDS" :
-            assert len(seq_feature.qualifiers['translation'])==1
-            if args.maker:
-                output_handle.write(">%s%s\n%s\n" % (
-                    seq_feature.qualifiers['locus_tag'][0],
-                    ending,
-                    seq_feature.qualifiers['translation'][0]))
-            else:
-                if args.jgi:
-                    output_handle.write(">%s\n%s\n" % (
-                        seq_feature.qualifiers['gene'][0],
-                        seq_feature.qualifiers['translation'][0]))
+            try:
+                ID = seq_feature.qualifiers['locus_tag'][0]
+            except KeyError:
+                try:
+                    ID = seq_feature.qualifiers['protein_id'][0]
+                except KeyError:
+                    pass
+            try:
+                Seq = seq_feature.qualifiers['translation'][0]
+            except KeyError:
+                pass
+            
+            if ID:
+                if Seq:
+                    output_handle.write(">%s\n%s\n" % (ID, Seq))
                 else:
-                    output_handle.write(">%s\n%s\n" % (
-                        seq_feature.qualifiers['locus_tag'][0],
-                        seq_feature.qualifiers['translation'][0]))
+                    print "%s has no sequence" % ID
 
 output_handle.close()
 input_handle.close()
