@@ -52,9 +52,9 @@ def compare(input):
                 singletons.append([col[0]])
     return (identical, great, okay, others, unique, bad)
 
-subprocess.call(['usearch8', '-usearch_global', sys.argv[1], '-db', sys.argv[2], '-id', '0.6', '-userout', 'prot_compare1.txt', '-userfields', 'query+target+id+ql+tl+qcov+tcov', '-output_no_hits', '-top_hit_only', '-notrunclabels'])
+subprocess.call(['usearch8', '-usearch_global', sys.argv[1], '-db', sys.argv[2], '-id', '0.6', '-userout', 'prot_compare1.txt', '-userfields', 'query+target+id+ql+tl+qcov+tcov', '-output_no_hits', '-top_hit_only', '-strand', 'plus', '-notrunclabels'])
 
-subprocess.call(['usearch8', '-db', sys.argv[1], '-usearch_global', sys.argv[2], '-id', '0.6', '-userout', 'prot_compare2.txt', '-userfields', 'query+target+id+ql+tl+qcov+tcov', '-output_no_hits', '-top_hit_only', '-notrunclabels'])
+subprocess.call(['usearch8', '-db', sys.argv[1], '-usearch_global', sys.argv[2], '-id', '0.6', '-userout', 'prot_compare2.txt', '-userfields', 'query+target+id+ql+tl+qcov+tcov', '-output_no_hits', '-top_hit_only', '-strand', 'plus', '-notrunclabels'])
 
 #parse output
 qvsr = compare('prot_compare1.txt')

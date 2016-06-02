@@ -20,7 +20,7 @@ with open(sys.argv[1], 'rU') as input:
             seqid = header.index('nucleotides')
             boldid = header.index('sequenceID')
             gbid = header.index('genbank_accession')
-            continue      
+            continue
         col = line.split('\t')
         K = 'k:Animalia'
         P = 'p:'+col[pid].strip()
@@ -29,6 +29,8 @@ with open(sys.argv[1], 'rU') as input:
         F = 'f:'+col[fid].strip()
         G = 'g:'+col[gid].strip()
         S = 's:'+col[sid].strip().replace('.', '')
+        if ' sp ' in S: #remove those that have sp. in them
+            S = ''
         ID = col[boldid].strip()
         GB = col[gbid].strip()
         Seq = col[seqid].replace('-', '')
