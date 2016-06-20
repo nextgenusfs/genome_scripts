@@ -129,24 +129,23 @@ def runbinary(input, outgroup):
                 if line.startswith('##'):
                     continue
                 data = line.split('\t')[9:]
-                if '2' in data:
-                    data1 = ['0' if x=='2' else x for x in data]
-                    datadb.append(data1)
-                    data2 = ['0' if x=='1' else x for x in data]
-                    data2 = ['1' if x=='2' else x for x in data2]
-                    datadb.append(data2)
-                elif '3' in data:
+                if '3' in data:
                     data1 = ['0' if x=='3' else x for x in data]
                     data1 = ['0' if x=='2' else x for x in data1]
                     datadb.append(data1)
                     data2 = ['0' if x=='1' else x for x in data]
                     data2 = ['1' if x=='2' else x for x in data2]
                     data2 = ['0' if x=='3' else x for x in data2]
-                    datadb.append(data2)
                     data3 = ['0' if x=='1' else x for x in data]
                     data3 = ['0' if x=='2' else x for x in data3]
                     data3 = ['1' if x=='3' else x for x in data3]
                     datadb.append(data3)
+                elif '2' in data:
+                    data1 = ['0' if x=='2' else x for x in data]
+                    datadb.append(data1)
+                    data2 = ['0' if x=='1' else x for x in data]
+                    data2 = ['1' if x=='2' else x for x in data2]
+                    datadb.append(data2)
                 else:
                     datadb.append(data)
         binarydata = [list(x) for x in zip(*datadb)]
@@ -162,11 +161,11 @@ def runbinary(input, outgroup):
     trees = list(Phylo.parse(os.path.join(tmpdir, 'RAxML_bootstrap.binary.nwk'), 'newick'))
     best = Phylo.read(os.path.join(tmpdir,'RAxML_bestTree.binary.nwk'), 'newick')
     support_tree = get_support(best, trees)
-    Phylo.write(support_tree, args.input+'.binary.phylogeny.nwk', 'newick')
+    Phylo.write(support_tree, args.input+'.binary.phylogeny.nex', 'nexus')
     Phylo.draw(support_tree, do_show=False)
     pylab.axis('off')
     pylab.savefig(args.input+'.binary.phylogeny.pdf', format='pdf', bbox_inches='tight', dpi=1000)
-    shutil.rmtree(tmpdir)
+    #shutil.rmtree(tmpdir)
 
 #first check the input and make sure files are present
 if not os.path.isfile(args.input+'.tab'):
