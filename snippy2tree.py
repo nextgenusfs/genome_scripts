@@ -17,7 +17,7 @@ parser=argparse.ArgumentParser(prog='snippy2tree.py',
     epilog="""Written by Jon Palmer (2016) nextgenusfs@gmail.com""",
     formatter_class = MyFormatter)
 parser.add_argument('-i','--input', default='core', help='snippy prefix name (basename)')
-parser.add_argument('-m','--method', choices=['all', 'binary', 'snps', 'window'], default='snps', help='method to use for reconstructing phylogeny')
+parser.add_argument('-m','--method', required=True, choices=['all', 'binary', 'snps', 'window'], default='snps', help='method to use for reconstructing phylogeny')
 parser.add_argument('--bootstrap', default=100, type=int, help='Number of bootstraps to run with RAxML')
 parser.add_argument('--outgroup', default='Reference', help='Outgroup for RAxML')
 parser.add_argument('--window', default=25, type=int, help='flanking region for each SNP in window method')
@@ -43,10 +43,10 @@ def runsnps(input, outgroup):
         shutil.rmtree(tmpdir)
     os.makedirs(tmpdir)
     if not outgroup:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', os.path.abspath(file_in), '-n', 'snps.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)    
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', os.path.abspath(file_in), '-n', 'snps.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)
     else:
         subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', os.path.abspath(file_in), '-o', outgroup, '-n', 'snps.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)
-    
+
      #parse with biopython and draw
     trees = list(Phylo.parse(os.path.join(tmpdir, 'RAxML_bootstrap.snps.nwk'), 'newick'))
     best = Phylo.read(os.path.join(tmpdir,'RAxML_bestTree.snps.nwk'), 'newick')
@@ -100,10 +100,10 @@ def runwindow(input, outgroup):
     subprocess.call(['trimal', '-in', os.path.join(tmpdir, 'windows.mafft.fa'), '-out', os.path.join(tmpdir, 'windows.trimal.fa'), '-automated1'])
 
     if not outgroup:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', 'windows.trimal.fa', '-n', 'windows.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)    
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', 'windows.trimal.fa', '-n', 'windows.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)
     else:
         subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', 'windows.trimal.fa', '-o', outgroup, '-n', 'windows.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)
-    
+
      #parse with biopython and draw
     trees = list(Phylo.parse(os.path.join(tmpdir, 'RAxML_bootstrap.windows.nwk'), 'newick'))
     best = Phylo.read(os.path.join(tmpdir,'RAxML_bestTree.windows.nwk'), 'newick')
@@ -113,7 +113,7 @@ def runwindow(input, outgroup):
     pylab.axis('off')
     pylab.savefig(args.input+'.windows.phylogeny.pdf', format='pdf', bbox_inches='tight', dpi=1000)
     shutil.rmtree(tmpdir)
-                
+
 #parse the snippy vcf file, pull out the "binary" alleles, concatenate, and run RAxML
 def runbinary(input, outgroup):
     print "Runnning binary (presence/absence) method."
@@ -152,12 +152,12 @@ def runbinary(input, outgroup):
         binarydata = [list(x) for x in zip(*datadb)]
         for i in binarydata:
             output.write(">%s\n%s\n" % (i[0], ''.join(i[1:])))
-    
+
     if not outgroup:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'BINGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', os.path.abspath(input+'.binary.fa'), '-n', 'binary.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)    
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'BINGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', os.path.abspath(input+'.binary.fa'), '-n', 'binary.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)
     else:
         subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', 'BINGAMMA', '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', os.path.abspath(input+'.binary.fa'), '-o', outgroup, '-n', 'binary.nwk'], cwd = tmpdir, stdout = FNULL, stderr = FNULL)
-    
+
      #parse with biopython and draw
     trees = list(Phylo.parse(os.path.join(tmpdir, 'RAxML_bootstrap.binary.nwk'), 'newick'))
     best = Phylo.read(os.path.join(tmpdir,'RAxML_bestTree.binary.nwk'), 'newick')
@@ -178,7 +178,7 @@ if not os.path.isfile(args.input+'.vcf'):
 if not os.path.isfile(args.input+'.aln'):
     print "Error: %s.aln not found, check --input parameter" % args.input
     os._exit(1)
-         
+
 #determine which samples were run with snippy-core
 global samples
 samples = getheaders(args.input)
