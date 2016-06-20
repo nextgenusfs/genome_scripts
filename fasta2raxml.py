@@ -62,6 +62,7 @@ print "Drawing tree inferred from RAxML"
 trees = list(Phylo.parse(os.path.join(tmp, 'RAxML_bootstrap.nwk'), 'newick'))
 best = Phylo.read(os.path.join(tmp, 'RAxML_bestTree.nwk'), 'newick')
 support_tree = get_support(best, trees)
+Phylo.write(support_tree, args.out.split('.')[0]+'.nwk', 'newick')
 Phylo.draw(support_tree, do_show=False)
 pylab.axis('off')
 pylab.savefig(args.out, format='pdf', bbox_inches='tight', dpi=1000) 
