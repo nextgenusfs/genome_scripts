@@ -55,7 +55,7 @@ def runsnps(input, outgroup):
     Phylo.draw(support_tree, do_show=False)
     pylab.axis('off')
     pylab.savefig(args.input+'.snps.phylogeny.pdf', format='pdf', bbox_inches='tight', dpi=1000)
-    shutil.rmtree(tmpdir)
+    #shutil.rmtree(tmpdir)
 
 #take snps, pull out window around snp, concatenate and then run RAxML
 def runwindow(input, outgroup):
@@ -112,7 +112,7 @@ def runwindow(input, outgroup):
     Phylo.draw(support_tree, do_show=False)
     pylab.axis('off')
     pylab.savefig(args.input+'.windows.phylogeny.pdf', format='pdf', bbox_inches='tight', dpi=1000)
-    shutil.rmtree(tmpdir)
+    #shutil.rmtree(tmpdir)
 
 #parse the snippy vcf file, pull out the "binary" alleles, concatenate, and run RAxML
 def runbinary(input, outgroup):
@@ -161,7 +161,7 @@ def runbinary(input, outgroup):
     trees = list(Phylo.parse(os.path.join(tmpdir, 'RAxML_bootstrap.binary.nwk'), 'newick'))
     best = Phylo.read(os.path.join(tmpdir,'RAxML_bestTree.binary.nwk'), 'newick')
     support_tree = get_support(best, trees)
-    Phylo.write(support_tree, args.input+'.binary.phylogeny.nex', 'nexus')
+    Phylo.write(support_tree, args.input+'.binary.phylogeny.nwk', 'newick')
     Phylo.draw(support_tree, do_show=False)
     pylab.axis('off')
     pylab.savefig(args.input+'.binary.phylogeny.pdf', format='pdf', bbox_inches='tight', dpi=1000)
