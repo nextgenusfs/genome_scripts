@@ -95,8 +95,8 @@ def ParseAntiSmash(input, tmpdir, output):
                     if f.type == "CDS":
                         ID = f.qualifiers.get('locus_tag')[0]
                         #if not ID.endswith('-T1'):
-                            #ID = ID + '-T1'                       
-                        if f.qualifiers.get('sec_met'):            
+                            #ID = ID + '-T1'
+                        if f.qualifiers.get('sec_met'):
                             for k, v in f.qualifiers.items():
                                 if k == 'sec_met':
                                     for i in v:
@@ -137,7 +137,7 @@ def ParseAntiSmash(input, tmpdir, output):
                                             PFAM[ID] = [pfam]
                                         else:
                                             PFAM[ID].append(pfam)
-                            
+
             print("Found %i clusters, %i biosynthetic enyzmes, and %i smCOGs predicted by antiSMASH" % (clusterCount, backboneCount, cogCount))
 
 def GetClusterGenes():
@@ -211,8 +211,7 @@ FinalOut = args.out + '.bac.overlap.txt'
 ClustersOut = args.out + '.secmet.clusters.txt'
 sam_out = os.path.join(outputDir, 'bwa.sam')
 bam_out = os.path.join(outputDir, 'bwa.bam')
-sortbam = os.path.join(outputDir, 'bwa.sort')
-realsortedbam = sortbam + '.bam'
+sortbam = os.path.join(outputDir, 'bwa.sort.bam')
 BedPE = os.path.join(outputDir, 'bedpe.bed')
 bacBED = os.path.join(outputDir, 'reads.bed')
 AntiSmashBed = os.path.join(outputDir, 'antismash.bed')
@@ -241,14 +240,14 @@ if args.fwd_reads:
             subprocess.call(['bwa', 'mem', '-t', cpus, tmp_genome, f_reads, r_reads], stdout = output, stderr = FNULL)
         with open(bam_out, 'w') as output:
             subprocess.call(['samtools', 'view', '-bS', sam_out], stdout = output)
-        subprocess.call(['samtools', 'sort', '-n', bam_out, sortbam])
+        subprocess.call(['samtools', 'sort', '-n', '-o', sortbam, bam_out])
     else:
         print("BWA mapping has already been run, moving on...")
 
     #now convert sorted bam to bedpe
     print("Converting BAM output to PE bed file")
     with open(BedPE, 'w') as output:
-        subprocess.call(['bedtools', 'bamtobed', '-bedpe', '-i', realsortedbam], stdout = output, stderr = FNULL)
+        subprocess.call(['bedtools', 'bamtobed', '-bedpe', '-i', sortbam], stdout = output, stderr = FNULL)
 
     #convert bedpe to single interval bam
     print("Converting PE Bed file to BAC interval bed")
@@ -340,7 +339,7 @@ else: #do not map reads, but just reformat antiSMASH results in same way as abov
 
 #so if you got here, that means you have 1) already created your BAC file and/or 2) have clusters split into gbk files
 #now lets pull out information for each cluster into a tab delimited file
-'''#dictionaries available now 
+'''#dictionaries available now
 BackBone --> ID = type
 SMCOGs --> ID = SMCOG
 bbSubType --> ID = NRPS/PKS subtype
@@ -418,7 +417,7 @@ for file in os.listdir(outputDir):
                             else:
                                 PF = '.'
                             output.write("%s\t%s:%i-%i\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (name, chr, actualStart, actualEnd, strand, location, enzyme, domains, product, cog, IP, PF, note, prot_seq, DNA_seq))
-                                              
+
 #now put together into a single file
 finallist = []
 for file in os.listdir(outputDir):
