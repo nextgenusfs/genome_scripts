@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 import sys, re
+from natsort import natsorted
 
 if len(sys.argv) < 2:
     print("Purpose: Script will parse Bold DB txt output to fasta file, keeping only records deposited in GenBank\nUsage: bold2utax.py bold_data.txt > formatted.fa")
     sys.exit(1)
 
+bins_seen = {}
 with open(sys.argv[1], 'rU') as input:
     for line in input:
         line = line.replace('\n', '')
@@ -20,8 +22,19 @@ with open(sys.argv[1], 'rU') as input:
             seqid = header.index('nucleotides')
             boldid = header.index('sequenceID')
             gbid = header.index('genbank_accession')
+            bin = header.index('bin_uri')
+            idby = header.index('identification_provided_by')
             continue
         col = line.split('\t')
+        #some idiots have collector names in these places in the DB, this DB is kind of a mess....
+        bd = col[idby].strip()
+        badnames = bd.split(' ')
+        badfiltered = ['1','2','3','4','5','6','7','8','9','0']
+        for y in badnames:
+            if len(y) > 2:
+                if y != 'Art':
+                    if y != 'Eric':
+                        badfiltered.append(y)
         K = 'k:Animalia'
         P = 'p:'+col[pid].strip()
         C = 'c:'+col[cid].strip()
@@ -31,15 +44,38 @@ with open(sys.argv[1], 'rU') as input:
         S = 's:'+col[sid].strip().replace('.', '')
         if ' sp ' in S: #remove those that have sp. in them
             S = ''
+        if S.endswith(' sp'):
+            S = ''
+        if badfiltered:
+            if any(bad in G for bad in badfiltered):
+                G = ''
+            if any(bad in S for bad in badfiltered):
+                S = ''
         ID = col[boldid].strip()
         GB = col[gbid].strip()
-        Seq = col[seqid].replace('-', '')
-        Seq = re.sub('N*$', '', Seq)
-        Seq = re.sub('^N*', '', Seq)
-        tax = []
-        for i in [K,P,C,O,F,G,S]:
-            if not i.endswith(':'):
-                tax.append(i)
-        tax_fmt = ','.join(tax)
-        if not GB == '':
-            sys.stdout.write('>%s;tax=%s\n%s\n' % (GB, tax_fmt, Seq))
+        if GB: #if there is a GB accession
+            if 'Pending' in GB:
+                continue
+            Seq = col[seqid].replace('-', '')
+            Seq = re.sub('N*$', '', Seq)
+            Seq = re.sub('^N*', '', Seq)
+            tax = []
+            for i in [K,P,C,O,F,G,S]:
+                if not i.endswith(':'):
+                    tax.append(i)
+            tax_fmt = ','.join(tax)
+            if tax_fmt.endswith(',') or tax_fmt.endswith(', '):
+                tax_fmt = tax_fmt.rsplit(',',1)[0]
+            BIN = col[bin].strip()
+            if BIN == '':
+                continue
+            if not BIN in bins_seen:
+                bins_seen[BIN] = (tax_fmt, GB, Seq)
+            else:
+                oldtax = bins_seen.get(BIN)[0]
+                oldlevels = oldtax.count(',')
+                if tax_fmt.count(',') > oldlevels:
+                    bins_seen[BIN] = (tax_fmt, GB, Seq)
+
+for k,v in natsorted(bins_seen.items()):
+    sys.stdout.write('>%s_%s;tax=%s\n%s\n' % (k, v[1], v[0], v[2]))
