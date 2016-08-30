@@ -2,9 +2,11 @@
 
 import sys, argparse, subprocess, re, multiprocessing, os
 from Bio import AlignIO
+
 parser = argparse.ArgumentParser()
 parser.add_argument('-f','--fasta', required=True, help='multi-fasta file')
 parser.add_argument('-o','--out', default='out', help='Base name for output files')
+parser.add_argument('-m','--raxml_method', default='GTRGAMMA', help='RAxML method')
 parser.add_argument('--outgroup', help='Outgroup for RAxML')
 parser.add_argument('--bootstrap', default='10', help='Num of Rapid Bootstraps for RAxML')
 parser.add_argument('--threads', default=2, help='Num of threads to use')
@@ -115,9 +117,9 @@ def RunRAxML(input):
     subprocess.call(['trimal', '-in', align2, '-automated1', '-phylip', '-out', trimal])
     raxml_out = args.out + '.raxml.nwk'
     if args.outgroup:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', cores, '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-o', args.outgroup, '-#', args.bootstrap,'-s', trimal, '-n', raxml_out])
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', cores, '-f', 'a', '-m', args.raxml_method, '-p', '12345', '-x', '12345', '-o', args.outgroup, '-#', args.bootstrap,'-s', trimal, '-n', raxml_out])
     else:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', cores, '-f', 'a', '-m', 'GTRGAMMA', '-p', '12345', '-x', '12345', '-#', args.bootstrap,'-s', trimal, '-n', raxml_out])
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', cores, '-f', 'a', '-m', args.raxml_method, '-p', '12345', '-x', '12345', '-#', args.bootstrap,'-s', trimal, '-n', raxml_out])
     for file in os.listdir("."):
         if file.startswith("RAxML_info"):
             os.rename(file, 'RAxML_info.txt')
