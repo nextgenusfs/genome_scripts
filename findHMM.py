@@ -50,7 +50,11 @@ def gb2output(input, output1, output2, output3):
                         scaffolds.write(">%s\n%s\n" % (record.id, record.seq))
                         for f in record.features:
                             if f.type == "CDS":
-                                proteins.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0]+'_'+f.qualifiers['protein_id'][0], f.qualifiers['translation'][0]))
+                                try:
+                                    protID = f.qualifiers['protein_id'][0]
+                                except KeyError:
+                                    protID = '???'
+                                proteins.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0]+'_'+protID, f.qualifiers['translation'][0]))
                             if f.type == "mRNA":
                                 feature_seq = f.extract(record.seq)
                                 transcripts.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0], feature_seq))
