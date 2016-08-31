@@ -40,24 +40,24 @@ def group_by_heading( some_source ):
             buffer.append( line )
     yield buffer
 
-def gb2output(input, output1, output2, output3):
+def gb2output(input, output1, output3):
     with open(output1, 'w') as proteins:
-        with open(output2, 'w') as transcripts:
-            with open(output3, 'w') as scaffolds:
-                with open(input, 'rU') as gbk:
-                    SeqRecords = SeqIO.parse(gbk, 'genbank')
-                    for record in SeqRecords:
-                        scaffolds.write(">%s\n%s\n" % (record.id, record.seq))
-                        for f in record.features:
-                            if f.type == "CDS":
-                                try:
-                                    protID = f.qualifiers['protein_id'][0]
-                                except KeyError:
-                                    protID = '???'
-                                proteins.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0]+'_'+protID, f.qualifiers['translation'][0]))
-                            if f.type == "mRNA":
-                                feature_seq = f.extract(record.seq)
-                                transcripts.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0], feature_seq))
+        with open(output3, 'w') as scaffolds:
+            with open(input, 'rU') as gbk:
+                SeqRecords = SeqIO.parse(gbk, 'genbank')
+                for record in SeqRecords:
+                    scaffolds.write(">%s\n%s\n" % (record.id, record.seq))
+                    for f in record.features:
+                        if f.type == "CDS":
+                            try:
+                                protID = f.qualifiers['protein_id'][0]
+                            except KeyError:
+                                protID = '???'
+                            try:
+                                protSeq = f.qualifiers['translation'][0]
+                            except KeyError:
+                                continue
+                            proteins.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0]+'_'+protID, protSeq))
 
 def tblastnFilter(input, query, cpus, output):
     global HitList, Scaffolds, tBlastN
@@ -123,9 +123,8 @@ for file in args.input:
         base = base.split('/') [-1]
     labels.append(base)
     Proteins = os.path.join(tmpdir, base+'.proteins.fa')
-    Transcripts = os.path.join(tmpdir, base+'.transcripts.fa')
     Genome = os.path.join(tmpdir, base+'.genome.fa')
-    gb2output(file, Proteins, Transcripts, Genome)
+    gb2output(file, Proteins, Genome)
     
     #print status
     print '----------------------------------------------'
