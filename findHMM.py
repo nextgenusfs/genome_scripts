@@ -56,13 +56,15 @@ def gb2output(input, output1, output2, output3):
                                 transcripts.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0], feature_seq))
 
 def tblastnFilter(input, query, cpus, output):
-    global HitList
+    global HitList, Scaffolds, tBlastN
     HitList = []
+    Scaffolds = []
+    tBlastN = {}
     #start by formatting blast db/dustmasker filtered format
     subprocess.call(['dustmasker', '-in', input, '-infmt', 'fasta', '-parse_seqids', '-outfmt', 'maskinfo_asn1_bin', '-out', os.path.join(output,'genome_dust.asnb')], stdout = FNULL, stderr = FNULL)
     subprocess.call(['makeblastdb', '-in', input, '-dbtype', 'nucl', '-parse_seqids', '-mask_data', os.path.join(output, 'genome_dust.asnb'), '-out', os.path.join(output, 'genome')], stdout = FNULL, stderr = FNULL)
     #okay, now run tblastn using uniprot proteins
-    subprocess.call(['tblastn', '-num_threads', str(args.cpus), '-db', os.path.join(output, 'genome'), '-query', query, '-max_target_seqs', '1', '-db_soft_mask', '11', '-threshold', '999', '-max_intron_length', args.maxIntron, '-evalue', '1e-10', '-outfmt', '6', '-out', os.path.join(output,'filter.tblastn.tab')], stdout = FNULL, stderr = FNULL)
+    subprocess.call(['tblastn', '-num_threads', str(args.cpus), '-db', os.path.join(output, 'genome'), '-query', query, '-max_target_seqs', '1', '-db_soft_mask', '11', '-threshold', '999', '-max_intron_length', args.maxIntron, '-evalue', '1e-5', '-outfmt', '6', '-out', os.path.join(output,'filter.tblastn.tab')], stdout = FNULL, stderr = FNULL)
     #now parse through results, generating a list for exonerate function
     with open(os.path.join(output, 'filter.tblastn.tab')) as input:
         reader = csv.reader(input, delimiter='\t')
@@ -70,6 +72,10 @@ def tblastnFilter(input, query, cpus, output):
             hit = cols[0] + '::' + cols[1]
             if hit not in HitList:
                 HitList.append(hit)
+            if cols[1] not in Scaffolds:
+                Scaffolds.append(cols[1])
+            if cols[0] not in tBlastN:
+                tBlastN[cols[0]] = (cols[1]+":"+cols[8]+"-"+cols[9], cols[11], cols[10], 'NA', 'tBlastn')
 
 def runExonerate(input):
     global Missing
@@ -82,7 +88,7 @@ def runExonerate(input):
     with open(query, 'w') as output:
         rec = record_dict[s[0]]
         output.write(">%s\n%s\n" % (rec.id, rec.seq))
-    scaffold = s[1] + '.fa'
+    scaffold = s[1] + '.fasta'
     scaffold = os.path.join(tmpdir, scaffold)
     exonerate_out = 'exonerate_' + name + '.out'
     exonerate_out = os.path.join(tmpdir, exonerate_out)
@@ -197,11 +203,12 @@ for file in args.input:
         print "Try to recover models using tBlastn/Exonerate"
         tblastnFilter(Genome, Consensi, args.cpus, tmpdir)
         print "found %i preliminary tBlastn alignments" % (len(HitList))
-        if len(HitList) != 0:          
+        if len(HitList) != 0: 
             #split genome fasta into individual scaffolds
             with open(Genome, 'rU') as input:
                 for record in SeqIO.parse(input, "fasta"):
-                    SeqIO.write(record, os.path.join(tmpdir, record.id + ".fa"), "fasta")
+                    if record.id in Scaffolds:
+                        SeqIO.write(record, os.path.join(tmpdir, record.id + ".fasta"), "fasta")
 
             #Now run exonerate on hits
             print "Polishing alignments with Exonerate"
@@ -235,12 +242,21 @@ for file in args.input:
                         if not info[0] in Results:
                             Results[info[0]] = (info[2], 'NA', info[1], 'NA', 'Exonerate')
                         output6.write('>%s\n%s\n' % (rec.id, rec.seq.translate()))
+            #clean up tmp folder
+            for root, dirs, files in os.walk(tmpdir):
+                for file in files:
+                    if file.endswith('.out') or file.endswith('.fasta'):
+                        os.remove(os.path.join(root, file))
         else:
             print "No potential hits found"
             
         for i in HMMmodels:
             if not i in Results:
-                Results[i] = ('None found', 'NA', 'NA', 'NA', 'NA')
+                if i in tBlastN:
+                    Results[i] = tBlastN.get(i)
+                else:
+                    print 'HMM-model '+i+' not found'
+                    Results[i] = ('None found', 'NA', 'NA', 'NA', 'NA')
     else:
         print "Saving all hits to %s" % FinalOut
     
