@@ -50,6 +50,10 @@ def gb2output(input, output1, output3):
                     for f in record.features:
                         if f.type == "CDS":
                             try:
+                                locusID = f.qualifiers['locus_tag'][0]
+                            except KeyError: #if no locus_id it isn't a real locus or is partial?
+                                continue
+                            try:
                                 protID = f.qualifiers['protein_id'][0]
                             except KeyError:
                                 protID = '???'
@@ -57,7 +61,7 @@ def gb2output(input, output1, output3):
                                 protSeq = f.qualifiers['translation'][0]
                             except KeyError:
                                 continue
-                            proteins.write(">%s\n%s\n" % (f.qualifiers['locus_tag'][0]+'_'+protID, protSeq))
+                            proteins.write(">%s\n%s\n" % (locusID+'_'+protID, protSeq))
 
 def tblastnFilter(input, query, cpus, output):
     global HitList, Scaffolds, tBlastN
@@ -230,7 +234,7 @@ for file in args.input:
                 if (rs.ready()): break
 
             #now collect all exonerate results into one
-            print "Saving all hits to file"
+            print "Saving hits to file"
             Exonerate = os.path.join(tmpdir, 'exonerate.output.txt')
             skip = ['Command line', '%', ' ','tmp_', '\n', '--', 'Hostname']
             with open(Exonerate, 'w') as output5:
@@ -268,7 +272,7 @@ for file in args.input:
                     print 'HMM-model '+i+' not found'
                     Results[i] = ('None found', 'NA', 'NA', 'NA', 'NA')
     else:
-        print "Saving all hits to %s" % FinalOut
+        print "Saving hits to file"
     
     with open(TextOut, 'ab') as output:
         for k,v in natsorted(Results.items()):
