@@ -17,7 +17,7 @@ parser=argparse.ArgumentParser(prog='findHMM.py',
     epilog="""Written by Jon Palmer (2016) nextgenusfs@gmail.com""",
     formatter_class = MyFormatter)
 parser.add_argument('-i','--input', nargs='+', required=True, help='Genome (GBK) format')
-parser.add_argument('-o','--out', default='findHMM.table.csv', help='Summary output CSV file')
+parser.add_argument('-o','--out', default='findHMM', help='Output Basename')
 parser.add_argument('-m','--hmm', required=True, help='HMM file')
 parser.add_argument('--evalue', default='1e-50', help='HMM evalue')
 parser.add_argument('--cpus', default=2, type=int, help='Number of CPUs')
@@ -99,13 +99,19 @@ os.makedirs(tmpdir)
 AllResults = []
 labels = []
 
+#setup output files    
+FinalOut = args.out+'.proteins.fasta'
+TextOut = args.out+'.hits.tsv'
+SummaryOut = args.out+'.summary.csv'
+with open(TextOut, 'w') as output:
+    output.write('Genome\tHMM-Model\tHit\tBitScore\tEvalue\tAlign-Len\tMethod\n')
+
 for file in args.input:
     #Split GBK into parts
     base = file.rsplit('.', 1)[0]
     if '/' in base:
         base = base.split('/') [-1]
     labels.append(base)
-    FinalOut = base+'.findHMM.fasta'
     Proteins = os.path.join(tmpdir, base+'.proteins.fa')
     Transcripts = os.path.join(tmpdir, base+'.transcripts.fa')
     Genome = os.path.join(tmpdir, base+'.genome.fa')
@@ -156,9 +162,9 @@ for file in args.input:
                 if hit not in Results:
                     Results[hit] = (query, score, evalue, aln_length, 'Hmmer3')
    
-    with open(FinalOut, 'w') as output:
+    with open(FinalOut, 'ab') as output:
         for k,v in Results.items():
-            description = k+"|"+v[0]+"|evalue="+str(v[2])+"|HMMer3-Complete"
+            description = base+'|'+k+"|"+v[0]+"|evalue="+str(v[2])+"|HMMer3-Complete"
             rec = protein_dict[v[0]]
             rec.id = description
             rec.description = ''
@@ -207,7 +213,7 @@ for file in args.input:
                 if (rs.ready()): break
 
             #now collect all exonerate results into one
-            print "Saving all hits to %s" % FinalOut
+            print "Saving all hits to file"
             Exonerate = os.path.join(tmpdir, 'exonerate.output.txt')
             skip = ['Command line', '%', ' ','tmp_', '\n', '--', 'Hostname']
             with open(Exonerate, 'w') as output5:
@@ -219,6 +225,7 @@ for file in args.input:
                                 for line in group_by_heading(readfile):
                                     for i in line:
                                         if not any(i.startswith(x) for x in skip):
+                                            i = i.replace('^>', '>'+base+'|')
                                             output5.write(i)
         
             with open(FinalOut, 'ab') as output6:
@@ -236,12 +243,10 @@ for file in args.input:
                 Results[i] = ('None found', 'NA', 'NA', 'NA', 'NA')
     else:
         print "Saving all hits to %s" % FinalOut
-        
-    TextOut = base+'.findHMM.txt'
-    with open(TextOut, 'w') as output:
-        output.write('HMM-Model\tHit\tBitScore\tEvalue\tAlign-Len\tMethod\n')
+    
+    with open(TextOut, 'ab') as output:
         for k,v in natsorted(Results.items()):
-            output.write('%s\t%s\t%s\t%s\t%s\t%s\n' % (k, v[0], v[1], v[2], v[3], v[4]))
+            output.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (base, k, v[0], v[1], v[2], v[3], v[4]))
     SumResults = {}
     for k,v in Results.items():
         SumResults[k] = v[0]            
@@ -249,7 +254,7 @@ for file in args.input:
 
 print '----------------------------------------------'
 df = pd.DataFrame(AllResults, index=labels)
-df.to_csv(args.out)
-print 'Summary table saved to %s' % args.out
+df.to_csv(SummaryOut)
+print 'Summary table saved to %s' % SummaryOut
 if not args.debug:
     shutil.rmtree(tmpdir)
