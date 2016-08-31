@@ -127,10 +127,8 @@ for file in args.input:
     print '----------------------------------------------'
     print 'Working on %s' % base
     
-    #load proteins into dictionary
-    protein_dict = SeqIO.to_dict(SeqIO.parse(Proteins, 'fasta'))
-
     #check number of HMMer models
+    Results = {}
     HMMstat = os.path.join(tmpdir, 'hmmstat.txt')
     if not os.path.isfile(HMMstat):
         with open(HMMstat, 'w') as output:
@@ -146,37 +144,46 @@ for file in args.input:
                     if not cols[1] in HMMmodels:
                         HMMmodels.append(cols[1])
     print "Looking for %i protein HMM model(s)" % len(HMMmodels)
-    #do hmmer search of proteins
-    print "Scanning proteome using HMMsearch"
-    HMM = os.path.join(tmpdir, base+'.hmmsearch.txt')
-    subprocess.call(['hmmsearch', '-o', HMM, '--cpu', str(args.cpus), '-E', args.evalue, args.hmm, Proteins], stdout = FNULL, stderr = FNULL)
-    Results = {}
-    with open(HMM, 'rU') as results:
-        for qresult in SearchIO.parse(results, "hmmer3-text"):
-            query_length = qresult.seq_len #length of HMM model
-            hits = qresult.hits
-            num_hits = len(hits)
-            if num_hits > 0:
-                query = hits[0].id
-                hit = hits[0].query_id
-                score = hits[0].bitscore
-                evalue = hits[0].evalue
-                num_hsps = len(hits[0].hsps)
-                aln_length = 0
-                for x in range(0,num_hsps):
-                    aln_length += hits[0].hsps[x].aln_span
-                if hit not in Results:
-                    Results[hit] = (query, score, evalue, aln_length, 'Hmmer3')
+    
+    #check for annotated genome
+    Protsize = getSize(Proteins)
+    if Protsize > 300:  
+        #load proteins into dictionary
+        protein_dict = SeqIO.to_dict(SeqIO.parse(Proteins, 'fasta'))
+
+        #do hmmer search of proteins
+        print "Scanning proteome using HMMsearch"
+        HMM = os.path.join(tmpdir, base+'.hmmsearch.txt')
+        subprocess.call(['hmmsearch', '-o', HMM, '--cpu', str(args.cpus), '-E', args.evalue, args.hmm, Proteins], stdout = FNULL, stderr = FNULL)
+
+        with open(HMM, 'rU') as results:
+            for qresult in SearchIO.parse(results, "hmmer3-text"):
+                query_length = qresult.seq_len #length of HMM model
+                hits = qresult.hits
+                num_hits = len(hits)
+                if num_hits > 0:
+                    query = hits[0].id
+                    hit = hits[0].query_id
+                    score = hits[0].bitscore
+                    evalue = hits[0].evalue
+                    num_hsps = len(hits[0].hsps)
+                    aln_length = 0
+                    for x in range(0,num_hsps):
+                        aln_length += hits[0].hsps[x].aln_span
+                    if hit not in Results:
+                        Results[hit] = (query, score, evalue, aln_length, 'Hmmer3')
    
-    with open(FinalOut, 'ab') as output:
-        for k,v in Results.items():
-            description = base+'|'+k+"|"+v[0]+"|evalue="+str(v[2])+"|HMMer3-Complete"
-            rec = protein_dict[v[0]]
-            rec.id = description
-            rec.description = ''
-            rec.name = ''
-            SeqIO.write(rec, output, 'fasta')
-        
+        with open(FinalOut, 'ab') as output:
+            for k,v in Results.items():
+                description = base+'|'+k+"|"+v[0]+"|evalue="+str(v[2])+"|HMMer3-Complete"
+                rec = protein_dict[v[0]]
+                rec.id = description
+                rec.description = ''
+                rec.name = ''
+                SeqIO.write(rec, output, 'fasta')
+    else:
+        print "No annotation found in genome, will search DNA"
+             
     notfound = []
     for i in HMMmodels:
         if not i in Results:
