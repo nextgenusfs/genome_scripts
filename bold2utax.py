@@ -2,6 +2,7 @@
 
 import sys, re, argparse
 from natsort import natsorted
+from Bio import pairwise2
 
 #setup menu with argparse
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -14,7 +15,6 @@ parser=argparse.ArgumentParser(prog='bold2utax.py',
 parser.add_argument('-i','--input', required=True, help='Bold data dump TSV format')
 parser.add_argument('-o','--out', required=True, help='UTAX formated FASTA output')
 parser.add_argument('--primer', default='GGTCAACAAATCATAAAGATATTGG', help='Forward Primer Sequence')
-parser.add_argument('--trim_length', default='250', help='Distance to Trim sequences to')
 parser.add_argument('--primer_mismatch', default='4', help='Mismatches allowed in primer')
 parser.add_argument('--require_genbank', action='store_true', help='Require output to have GenBank Accessions')
 args=parser.parse_args()
@@ -76,17 +76,46 @@ def BestMatch(Seq, Primer):
 			BestPos = Pos
 	return BestPos, BestDiffs
 
-def TrimPrimer(Sequence, primer, trimlen, mismatch):
+def TrimPrimer(Sequence, primer, mismatch):
     #find primer location
     Diffs = BestMatch(Sequence, primer)
     if Diffs[1] > int(mismatch):
         #assume that primer was trimmed off
-        Seq = Sequence[:int(trimlen)]
+        Seq = Sequence
     else:
-        Seq = Sequence[Diffs[0]+len(primer):int(trimlen)]
-    #do a length check, if shorter than 250 bp, discard
-    if len(Seq) >= int(trimlen):
-        return Seq
+        Seq = Sequence[Diffs[0]+len(primer):]
+    return Seq
+
+def align_sequences(sequence_A, sequence_B, **kwargs):
+    """
+    Performs a global pairwise alignment between two sequences
+    using the BLOSUM62 matrix and the Needleman-Wunsch algorithm
+    as implemented in Biopython. Returns the alignment, the sequence
+    identity and the residue mapping between both original sequences.
+    """
+    def _calculate_identity(sequenceA, sequenceB):
+        """
+        Returns the percentage of identical characters between two sequences.
+        Assumes the sequences are aligned.
+        """
+        sa, sb, sl = sequenceA, sequenceB, len(sequenceA)
+        matches = [sa[i] == sb[i] for i in xrange(sl)]
+        seq_id = (100 * sum(matches)) / sl
+
+        gapless_sl = sum([1 for i in xrange(sl) if (sa[i] != '-' and sb[i] != '-')])
+        gap_id = (100 * sum(matches)) / gapless_sl
+        return (seq_id, gap_id)
+
+    gap_open = kwargs.get('gap_open', -10.0)
+    gap_extend = kwargs.get('gap_extend', -0.5)
+    alns = pairwise2.align.globalxs(sequence_A, sequence_B,
+                                    gap_open, gap_extend)
+    #get best alignment
+    best_aln = alns[0]
+    aligned_A, aligned_B, score, begin, end = best_aln
+    # Calculate sequence identity
+    seq_id, g_seq_id = _calculate_identity(aligned_A, aligned_B)
+    return ((aligned_A, aligned_B), seq_id, g_seq_id)
 
 Total = -1
 NoPrimer = 0
@@ -94,7 +123,10 @@ PrimerFound = 0
 TooShort = 0
 UniqueBIN = 0
 DupBIN = 0
+nonCOI = 0
+noBIN = 0
 
+#have to store a large amount of data in dictionary here as don't know when I will encounter a duplicate BIN
 bins_seen = {}
 with open(args.input, 'rU') as input:
     for line in input:
@@ -113,8 +145,22 @@ with open(args.input, 'rU') as input:
             gbid = header.index('genbank_accession')
             bin = header.index('bin_uri')
             idby = header.index('identification_provided_by')
+            marker = header.index('marker_codes')
             continue
+        #split each line at tabs
         col = line.split('\t')
+
+        #apparently there are other genes in here, so ignore anything not COI
+        if not 'COI' in col[marker]:
+            nonCOI += 1
+            continue
+
+        #check for BIN, if none, then move on
+        BIN = col[bin].strip()
+        if BIN == '':
+            noBIN += 1
+            continue
+
         #some idiots have collector names in these places in the DB, this DB is kind of a mess, doing the best I can....
         bd = col[idby].strip()
         badnames = bd.split(' ')
@@ -150,9 +196,11 @@ with open(args.input, 'rU') as input:
                     pass
             else:
                 continue
+        #clean up sequence, remove any gaps, remove terminal N's
         Seq = col[seqid].replace('-', '')
         Seq = re.sub('N*$', '', Seq)
         Seq = re.sub('^N*', '', Seq)
+        #get taxonomy information
         tax = []
         for i in [K,P,C,O,F,G,S]:
             if not i.endswith(':'):
@@ -160,11 +208,10 @@ with open(args.input, 'rU') as input:
         tax_fmt = ','.join(tax)
         if tax_fmt.endswith(',') or tax_fmt.endswith(', '):
             tax_fmt = tax_fmt.rsplit(',',1)[0]
-        BIN = col[bin].strip()
-        if BIN == '':
-            continue
+
+        #look for primer, trim if found
+        TrimSeq = TrimPrimer(Seq, args.primer, args.primer_mismatch)
         if not BIN in bins_seen:
-            TrimSeq = TrimPrimer(Seq, args.primer, args.trim_length, args.primer_mismatch)
             if TrimSeq:
                 bins_seen[BIN] = (tax_fmt, GB, TrimSeq)
                 UniqueBIN += 1
@@ -172,12 +219,10 @@ with open(args.input, 'rU') as input:
                 TooShort +=1
         else:
             DupBIN += 1
-            oldtax = bins_seen.get(BIN)[0]
-            oldlevels = oldtax.count(',')
-            if tax_fmt.count(',') > oldlevels:
-                TrimSeq = TrimPrimer(Seq, args.primer, args.trim_length, args.primer_mismatch)
-                if TrimSeq:
-                    bins_seen[BIN] = (tax_fmt, GB, TrimSeq)
+            #check if sequence is 5' to the one you already have, we want to have furthest 5' we can get
+            dupalign = align_sequences(TrimSeq, bins_seen.get(BIN)[2])
+            if dupalign[0][1].startswith('-'): #then the new sequence is further upstream and should replace the one in the dictionary
+                bins_seen[BIN] = (tax_fmt, GB, TrimSeq)
 
 with open(args.out, 'w') as output:
     for k,v in natsorted(bins_seen.items()):
@@ -187,7 +232,8 @@ with open(args.out, 'w') as output:
             output.write('>%s;tax=%s\n%s\n' % (k, v[0], v[2]))
 
 print "%i total records processed" % Total
+print "%i total non COI records" % nonCOI
+print "%i total records without a BIN" % noBIN
 print "%i records duplicate BIN" % DupBIN
-print "%i seq too short (%s bp)" % (TooShort, args.trim_length)
 print "%i records written to %s" % (UniqueBIN, args.out)
 

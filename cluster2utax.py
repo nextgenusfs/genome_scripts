@@ -14,6 +14,8 @@ parser=argparse.ArgumentParser(prog='cluster2utax.py',
     formatter_class = MyFormatter)
 parser.add_argument('-i','--input', required=True, help='FASTA file from bold2utax.py')
 parser.add_argument('-o','--out', required=True, help='Output basename')
+parser.add_argument('--min_tax', default='k', choices=['k','p','c','o','f','g','s'], help='Minimum levels of taxonomy to keep seq')
+parser.add_argument('--remove_dups', action='store_true', help='remove duplicate species')
 parser.add_argument('--debug', action='store_true', help='Keep intermediate files')
 args=parser.parse_args()
 
@@ -25,6 +27,8 @@ def countfasta(input):
                 count += 1
     return count
 
+TxLv = {'k': 0, 'p': 1, 'c': 2, 'o': 3, 'f': 4, 'g': 5, 's': 6}
+Lv = TxLv.get(args.min_tax)
 #set up tmpdir
 tmpdir = 'tmp_'+str(os.getpid())
 os.makedirs(tmpdir)
@@ -95,6 +99,10 @@ with open(UtaxOut, 'w') as utax:
     with open(UsearchOut, 'w') as usearch:
         with open(OTUs, 'rU') as input:
             for rec in SeqIO.parse(input, 'fasta'):
+                if not 'tax=' in rec.description:
+                    continue
+                if 'Pending' in rec.description:
+                    continue
                 #entire ID is in rec.description
                 if rec.description in LCA:
                     ID = LCA.get(rec.description)
@@ -106,16 +114,18 @@ with open(UtaxOut, 'w') as utax:
                 rec.description = ''
                 SeqIO.write(rec, usearch, 'fasta')
                 total += 1
+
                 tax = ID.split('tax=')[-1]
                 taxLevels = tax.count(',') #0 = kingdom, 1 = phylum, 2 = class, 3 = order, 4 = family, 5 = genus, 6 = species
-                if taxLevels > 2:
+                if taxLevels >= Lv:
                     okayTax += 1
                     if taxLevels > 5:
                         if not tax in TaxSeen:
                             TaxSeen.append(tax)
                         else:
-                            duplicateSp += 1
-                            continue  #skip if duplicated, just taking first one, hopefully this is okay...
+                            if args.remove_dups:
+                                duplicateSp += 1
+                                continue  #skip if duplicated, just taking first one, hopefully this is okay...built as option.
                     SeqIO.write(rec, utax, 'fasta')
 print "----------------------------------"
 print '%i input Seqs' % countfasta(args.input)
