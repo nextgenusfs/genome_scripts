@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, argparse, os, subprocess, shutil
+import sys, argparse, os, subprocess, shutil, random
 from Bio import SeqIO
 
 class MyFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -111,19 +111,32 @@ for x in AllBuscos:
 BadBuscos = set(BadBuscos)
 Keepers = [x for x in AllBuscos if x not in BadBuscos]
 
+if args.num:
+    if len(Keepers) <= args.num:
+        Keepersfilt = Keepers
+    else:
+        Keepersfilt = random.sample(Keepers, args.num)
+else:
+    Keepersfilt = Keepers
 #now loop through data and pull out the proteins for each
 with open(args.out, 'w') as output:
     for i in range(0,len(args.input)):
         SpeciesName = os.path.basename(file_list[i]).split('.',-1)[0]
         Proteins = SeqIO.index(os.path.join(tmpdir, file_list[i]), 'fasta')
         Seq = []
-        for y in Keepers:
-            ID = AllResults[i].get(y)
-            Seq.append(str(Proteins[ID].seq))
+        with open(os.path.join(tmpdir, 'run_'+SpeciesName, SpeciesName+'.buscos.fa'), 'w') as speciesout:  
+            for y in Keepersfilt:
+                ID = AllResults[i].get(y)
+                rec = Proteins[ID]
+                Seq.append(str(rec.seq))
+                rec.id = rec.id+'|'+y
+                rec.name = ''
+                rec.description = ''
+                SeqIO.write(rec, speciesout, 'fasta')
         output.write('>%s\n%s\n' % (SpeciesName, ''.join(Seq)))
 
 #finalize
-print "Found %i BUSCOs conserved in all genomes" % len(Keepers)
-print("%s\n" %  ', '.join(Keepers))
+print "Found %i BUSCOs conserved in all genomes, randomly chose %i" % (len(Keepers), len(Keepersfilt))
+print("%s\n" %  ', '.join(Keepersfilt))
 print "Concatenated protein sequences for all %i genomes located in: %s" % (len(args.input), args.out)
 
