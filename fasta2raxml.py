@@ -34,7 +34,7 @@ os.makedirs(tmp)
 print "Aligning sequences using MAFFT"
 mafft_out = os.path.join(tmp, 'alignment.fa')
 with open(mafft_out, 'w') as output:
-    subprocess.call(['mafft', args.input], stdout = output, stderr = FNULL)
+    subprocess.call(['mafft', '--thread', str(args.cpus), args.input], stdout = output, stderr = FNULL)
 
 print "Trimming alignment using trimAl"
 trimal_out = os.path.join(tmp, 'trimal.phylip')
@@ -48,14 +48,14 @@ elif args.method == 'nucl':
     method = 'GTRGAMMA'
 if args.cpus == 1:
     if not args.outgroup:
-        subprocess.call(['raxmlHPC-PTHREADS', '-f', 'a', '-m', method, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp, stdout = FNULL, stderr = FNULL)
+        subprocess.call(['raxmlHPC-PTHREADS', '-f', 'a', '-m', method, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp)
     else:
-        subprocess.call(['raxmlHPC-PTHREADS', '-f', 'a', '-m', method, '-o', args.outgroup, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp, stdout = FNULL, stderr = FNULL)
+        subprocess.call(['raxmlHPC-PTHREADS', '-f', 'a', '-m', method, '-o', args.outgroup, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp)
 else:
     if not args.outgroup:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', method, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp, stdout = FNULL, stderr = FNULL)
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', method, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp)
     else:
-        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', method, '-o', args.outgroup, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp, stdout = FNULL, stderr = FNULL)
+        subprocess.call(['raxmlHPC-PTHREADS', '-T', str(args.cpus), '-f', 'a', '-m', method, '-o', args.outgroup, '-p', '12345', '-x', '12345', '-#', str(args.bootstrap), '-s', trimal_out, '-n', 'nwk'], cwd = tmp)
 
 print "Drawing tree inferred from RAxML"
 #parse with biopython and draw
