@@ -2,7 +2,7 @@
 
 #Jon's Awesome Annotation Wrapper Script (JAAWS)
 
-#point here is to run trimmomatic to trim PE Miseq reads, then Spades, followed by some automated cleanup steps
+#point here is to run trimmomatic to trim PE Illumina reads, then Spades, followed by some automated cleanup steps
 DIR=$1
 R1=$2
 R2=$3
@@ -21,7 +21,7 @@ cd $1
 
 if [ ! -f clean.1.fq.gz ]; then
 	#run trimmomatic, trim a few bp off 5' end and remove adatpers, don't quality trim
-	trimmomatic PE -threads 12 $R1 $R2 $QR1 qtrimR1se.fq.gz $QR2 qtrimR2se.fq.gz CROP:250 ILLUMINACLIP:/usr/local/opt/trimmomatic/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 HEADCROP:8 MINLEN:36
+	trimmomatic PE -threads $CPU $R1 $R2 $QR1 qtrimR1se.fq.gz $QR2 qtrimR2se.fq.gz ILLUMINACLIP:/usr/local/opt/trimmomatic/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 HEADCROP:8 MINLEN:36
 
 	#map to phix genome, remove any paired reads that mapß
 	wget -c --tries=0 --read-timeout=20 ftp://ftp.ncbi.nlm.nih.gov/genomes/Viruses/Enterobacteria_phage_phiX174_sensu_lato_uid14015/NC_001422.fna
@@ -33,14 +33,15 @@ if [ ! -f clean.1.fq.gz ]; then
 	bgzip -@ $CPU clean.2.fq
 fi
 
-if [ ! -d spades ]; then
-	#Now run spades
-	spades.py -k 21,33,55,77,99,127 -t $CPU -m 64 --careful -o spades --pe1-1 $QCR1 --pe1-2 $QCR2
-else
-	spades.py -k 21,33,55,77,99,127 --continue -t $CPU -m 64 --careful -o spades --pe1-1 $QCR1 --pe1-2 $QCR2
-fi
-
 if [ ! -f spades.scaffolds.clean2.fasta ]; then
+	#check for spades folder, run on continue if found
+	if [ ! -d spades ]; then
+		#Now run spades
+		spades.py -k 21,33,55,77,99,127 -t $CPU -m 64 --careful -o spades --pe1-1 $QCR1 --pe1-2 $QCR2
+	else
+		spades.py -k 21,33,55,77,99,127 --continue -t $CPU -m 64 --careful -o spades --pe1-1 $QCR1 --pe1-2 $QCR2
+	fi
+
 	#grab scaffolds from output folder
 	cp spades/scaffolds.fasta $SG1
 
@@ -80,11 +81,37 @@ if [ ! -f spades.scaffolds.clean2.fasta ]; then
 	funannotate clean -i spades.scafffolds.clean1.fasta -o spades.scaffolds.clean2.fasta -m 1000
 fi
 
-#finally run 10 iterations of Pilon on the cleaned assembly
-pilon.sh $PWD/spades.scaffolds.clean2.fasta $PWD/$QCR1 $PWD/$QCR2 $CPU pilon_final.fasta
+if [ ! -f $OUTPUT.changes.txt ]; then
+	#Clean up assembly using Pilon, 5 iterations should be sufficient
+	mkdir -p pilon
+	cd pilon
+	cp ../spades.scaffolds.clean2.fasta .
+	#number of loops is hardcoded to 5 runs of pilon
+	for i in {1..5}; do
+		if [[ $i == '1' ]]; then
+			GENOME=spades.scaffolds.clean2.fasta
+		else
+			x=$(($i - 1))
+			GENOME=pilon$x.fasta
+		fi
+		if [[ ! -f pilon$i.fasta ]]; then
+			echo "Working on $GENOME"
+			bwa index $GENOME
+			bwa mem -t $CPU $GENOME ../$QCR1 ../$QCR2 | samtools view -@ $CPU -bS - | samtools sort -@ $CPU -o pilon$i.bam -
+			samtools index pilon$i.bam
+			#now run pilon
+			pilon --genome $GENOME --frags pilon$i.bam --output pilon$i --threads $CPU --changes
+		else
+			echo "$GENOME has already been run, moving onto next iteration"
+		fi
+	done
 
-#sort by size and rename fasta headers
-funannotate sort -i pilon_final.fasta -o $OUTPUT
+	cp pilon5.fasta pilon_final.fasta
+	cp pilon5.changes ../$OUTPUT.changes.txt
+	cd ..
+	#sort by size and rename fasta headers
+	funannotate sort -i pilon/pilon_final.fasta -o $OUTPUT
+fi
 
 #do a little cleanup as these files take up a lot of space, you don't need all these pilon BAM files, also remove the intermediate cleanup up fastqs
 rm MITO*
