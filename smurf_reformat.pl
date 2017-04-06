@@ -55,7 +55,7 @@ print "\n";
 	print "Options:\n";
 	print "-------------------------------------------------------------\n";
 	print "-c (--cluster):  SMURF Cluster file \n";
-	print "-b (--bacbone):  SMURF Backbone file\n";
+	print "-b (--backbone):  SMURF Backbone file\n";
 	print "-g (--genome):  gDNA sequences fasta format\n";
 	print "-p (--proteins):  protein sequences fasta format \n";
 	print "-o (--out): output name stem (out_clusters.txt) \n";
